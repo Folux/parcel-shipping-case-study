@@ -71,14 +71,14 @@ def generate_base_labels(config: Dict[str, Any]) -> pd.DataFrame:
     Returns:
         Pandas DataFrame with one row per label (12 columns)
     """
-    random.seed(config["random_seed"])
+    random.seed(config.random_seed)
 
     labels = []
-    num_labels = config["num_labels"]
-    carrier_dist = config["carrier_distribution"]
-    express_prop = config["service_class_express_proportion"]
-    insurance_prop = config["insurance_proportion"]
-    date_range = config["date_range_days"]
+    num_labels = config.num_labels
+    carrier_dist = config.carrier_distribution
+    express_prop = config.service_class_express_proportion
+    insurance_prop = config.insurance_proportion
+    date_range = config.date_range_days
 
     now = datetime.now(timezone.utc)
 
@@ -145,11 +145,11 @@ def apply_cdc_changes(df: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     Returns:
         Expanded DataFrame with multiple rows per changed label
     """
-    changed_prop = config["changed_labels_proportion"]
-    voided_prop = config["changed_voided_proportion"]
-    fraud_prop = config["voided_fraud_proportion"]
-    carrier_dist = config["carrier_distribution"]
-    express_prop = config["service_class_express_proportion"]
+    changed_prop = config.changed_labels_proportion
+    voided_prop = config.changed_voided_proportion
+    fraud_prop = config.voided_fraud_proportion
+    carrier_dist = config.carrier_distribution
+    express_prop = config.service_class_express_proportion
 
     rows = df.to_dict("records")
     new_rows = []

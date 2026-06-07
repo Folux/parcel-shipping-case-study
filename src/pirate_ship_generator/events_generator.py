@@ -125,7 +125,7 @@ def generate_events(labels_df: pd.DataFrame, config: dict) -> list[EventRow]:
     Returns:
         List of EventRow dicts representing synthetic tracking events
     """
-    random.seed(config["random_seed"])
+    random.seed(config.random_seed)
 
     all_events = []
 
