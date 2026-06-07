@@ -116,12 +116,6 @@ print("=" * 70 + "\n")
 
 # COMMAND ----------
 
-# The 'spark' variable is automatically available in Databricks notebooks
-# Just confirm it's there
-logger.info(f"Using Spark session: {spark.sparkContext.appName}")
-
-# COMMAND ----------
-
 # Run the main orchestration
 logger.info("=" * 70)
 logger.info("STARTING PIRATE SHIP SYNTHETIC DATA GENERATION")
