@@ -130,10 +130,25 @@ logger.info("=" * 70)
 logger.info("BRONZE LAYER GENERATION COMPLETE")
 logger.info("=" * 70)
 
-print(f"Status: {result['status']}")
-print(f"Bronze Labels: {result.get('labels_count', 'error')} rows")
-print(f"Bronze Events: {result.get('events_count', 'error')} rows")
-print(f"Message: {result.get('message', result.get('error_type', 'unknown'))}")
+# DEBUG: Show result object
+print("\n" + "=" * 70)
+print("DEBUG: RESULT OBJECT")
+print("=" * 70)
+print(f"Result type: {type(result)}")
+print(f"Result keys: {result.keys() if isinstance(result, dict) else 'Not a dict!'}")
+print(f"Result content: {result}")
+print("=" * 70 + "\n")
+
+# Display results
+if isinstance(result, dict):
+    print(f"Status: {result['status']}")
+    print(f"Bronze Labels: {result.get('labels_count', 'error')} rows")
+    print(f"Bronze Events: {result.get('events_count', 'error')} rows")
+    print(f"Message: {result.get('message', result.get('error_type', 'unknown'))}")
+else:
+    print(f"ERROR: result is not a dict! Type: {type(result)}")
+    print(f"Content: {result}")
+
 print("\nNext step: Implement Silver layer transformations")
 
 # COMMAND ----------
