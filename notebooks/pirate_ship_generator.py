@@ -24,8 +24,8 @@ Usage:
 # COMMAND ----------
 
 # Install the package from repo
-import os
-repo_path = os.path.abspath("../..")
+notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+repo_path = "/".join(notebook_path.split("/")[:-1])
 %pip install -e {repo_path}
 
 # COMMAND ----------
