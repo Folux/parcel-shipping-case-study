@@ -23,8 +23,18 @@ Usage:
 
 # COMMAND ----------
 
-# Install the package from repo
-%pip install -e git+https://github.com/Folux/parcel-shipping-case-study.git#egg=pirate_ship_generator
+# Add source directory to path (no pip install needed)
+import sys
+import os
+
+# Databricks repo path - adjust if your clone path is different
+# Standard clone: /Workspace/Repos/{username}/parcel-shipping-case-study
+notebook_path = dbutils.notebook.entry_point.get_notebook_path()
+repo_root = "/".join(notebook_path.split("/")[:-2])  # Go up from /notebooks/pirate_ship_generator.py
+src_path = f"{repo_root}/src"
+
+print(f"Adding to Python path: {src_path}")
+sys.path.insert(0, src_path)
 
 # COMMAND ----------
 
