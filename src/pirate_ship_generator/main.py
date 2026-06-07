@@ -24,6 +24,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _resolve_catalog(spark, preferred: str) -> str:
+    """
+    Return a usable Unity Catalog name.
+
+    Prefers `preferred` (from config) if it exists in the workspace; otherwise
+    falls back to the session's current_catalog(), so the notebook works for
+    any reviewer regardless of whether a `workspace` catalog exists.
+    """
+    try:
+        catalogs = [row[0] for row in spark.sql("SHOW CATALOGS").collect()]
+    except Exception:
+        catalogs = []
+
+    if preferred in catalogs:
+        return preferred
+
+    current = spark.sql("SELECT current_catalog()").collect()[0][0]
+    logger.warning(
+        f"Configured catalog '{preferred}' not found in this workspace; "
+        f"falling back to current catalog '{current}'."
+    )
+    return current
+
+
 def main(config_path: str = "config.yaml", spark=None) -> dict:
     """
     Main orchestration function for synthetic data generation.
@@ -110,7 +134,7 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
 
         # ===== Step 7: Write to Unity Catalog Tables (Bronze Layer) =====
         logger.info("Writing data to Bronze tables (Unity Catalog)")
-        catalog = config.catalog_name
+        catalog = _resolve_catalog(spark, config.catalog_name)
         schema = config.schema_name
         labels_table = f"{catalog}.{schema}.labels"
         events_table = f"{catalog}.{schema}.tracking_events"
