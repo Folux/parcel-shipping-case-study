@@ -23,21 +23,17 @@ Usage:
 
 # COMMAND ----------
 
-# Spark is already initialized by Databricks - just use it
-# Do a simple operation to ensure it's ready
-print(f"✓ Using Spark session: {spark.version}")
-
-# COMMAND ----------
-
-# Add source directory to path (works for Databricks serverless)
+# Setup: Add source directory to path
 import sys
 import os
 
-# Use relative path - notebooks are in parcel-shipping-case-study/notebooks
-# So ../src gets us to parcel-shipping-case-study/src
 src_path = os.path.abspath("../src")
 sys.path.insert(0, src_path)
 print(f"✓ Added to Python path: {src_path}")
+
+# Spark initialization (must happen early in notebook)
+print(f"✓ Spark version: {spark.version}")
+print(f"✓ Spark is ready")
 
 # COMMAND ----------
 
