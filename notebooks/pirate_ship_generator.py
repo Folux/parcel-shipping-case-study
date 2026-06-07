@@ -24,7 +24,9 @@ Usage:
 # COMMAND ----------
 
 # Install the package from repo
-%pip install -e /Workspace/Repos/your-username/pirate-ship-generator
+import os
+repo_path = os.path.abspath("../..")
+%pip install -e {repo_path}
 
 # COMMAND ----------
 
