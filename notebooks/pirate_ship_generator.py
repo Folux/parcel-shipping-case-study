@@ -28,8 +28,8 @@ Usage:
 
 # COMMAND ----------
 
-# Restart Python kernel to load newly installed package
-%restart_python
+# Restart Python to load newly installed package
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
