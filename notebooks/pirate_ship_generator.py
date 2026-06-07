@@ -84,11 +84,40 @@ logger.info(f"  config_path: {config_path}")
 logger.info(f"  labels_path: {labels_path}")
 logger.info(f"  events_path: {events_path}")
 
+# DEBUG: Verify config file exists
+print("\n" + "=" * 70)
+print("DEBUG: CONFIG FILE LOCATION")
+print("=" * 70)
+import os
+print(f"Current working directory: {os.getcwd()}")
+print(f"Config path (from widget): {config_path}")
+
+abs_config_path = os.path.abspath(config_path)
+print(f"Absolute path: {abs_config_path}")
+print(f"Exists: {os.path.exists(abs_config_path)}")
+
+if os.path.exists(abs_config_path):
+    print(f"✓ Config file found!")
+    file_size = os.path.getsize(abs_config_path)
+    print(f"  Size: {file_size} bytes")
+else:
+    print(f"✗ Config file NOT found!")
+    # List nearby directories
+    parent_dir = os.path.dirname(abs_config_path)
+    if os.path.exists(parent_dir):
+        print(f"\nFiles in {parent_dir}:")
+        files = os.listdir(parent_dir)[:10]
+        for f in files:
+            print(f"  - {f}")
+    else:
+        print(f"Parent directory also doesn't exist: {parent_dir}")
+
+print("=" * 70 + "\n")
+
 # COMMAND ----------
 
-# Get the Databricks spark session (automatically available in notebooks)
-from pyspark.sql import SparkSession
-spark = SparkSession.getOrCreate()
+# The 'spark' variable is automatically available in Databricks notebooks
+# Just confirm it's there
 logger.info(f"Using Spark session: {spark.sparkContext.appName}")
 
 # COMMAND ----------
