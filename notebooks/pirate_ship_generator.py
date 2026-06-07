@@ -25,7 +25,7 @@ Usage:
 
 # Install the package from repo
 notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
-repo_path = "/".join(notebook_path.split("/")[:-1])
+repo_path = "/".join(notebook_path.split("/")[:-2])  # Remove /notebooks and /filename
 %pip install -e {repo_path}
 
 # COMMAND ----------
