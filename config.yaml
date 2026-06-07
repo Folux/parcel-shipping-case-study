@@ -50,8 +50,9 @@ event_timezone_format_by_carrier:
   FEDEX: "utc_plain"  # ISO 8601 without timezone (e.g., 2026-06-06T10:30:00)
   DHL_ECOM: "tz_abbr" # ISO 8601 with timezone abbreviation (e.g., 2026-06-06T10:30:00 EST)
 
-# Databricks configuration
-catalog_name: "pirate_ship_demo"
+# Databricks configuration (Unity Catalog managed tables)
+# Tables are written as {catalog_name}.{schema_name}.labels and .tracking_events
+catalog_name: "workspace"
 schema_name: "raw"
 
 # Reproducibility: seed for random number generator

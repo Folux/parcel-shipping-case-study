@@ -69,33 +69,20 @@ logger = logging.getLogger(__name__)
 # COMMAND ----------
 
 # Define notebook widgets for configuration
+# Write destination (catalog/schema) is controlled by config.yaml, not widgets.
 dbutils.widgets.text(
     "config_path",
     "../config.yaml",
     label="Config File Path"
-)
-dbutils.widgets.text(
-    "labels_path",
-    "/mnt/bronze/labels",
-    label="Bronze Labels Table Path"
-)
-dbutils.widgets.text(
-    "events_path",
-    "/mnt/bronze/tracking_events",
-    label="Bronze Events Table Path"
 )
 
 # COMMAND ----------
 
 # Read widget values
 config_path = dbutils.widgets.get("config_path")
-labels_path = dbutils.widgets.get("labels_path")
-events_path = dbutils.widgets.get("events_path")
 
 logger.info(f"Configuration:")
 logger.info(f"  config_path: {config_path}")
-logger.info(f"  labels_path: {labels_path}")
-logger.info(f"  events_path: {events_path}")
 
 # DEBUG: Verify config file exists
 print("\n" + "=" * 70)
@@ -175,16 +162,19 @@ display(result)
 if result['status'] in ['success', 'success_with_warnings']:
     logger.info("Verifying generated tables...")
 
-    try:
-        labels_df = spark.read.format("delta").load(labels_path)
-        logger.info(f"✓ Labels table exists: {labels_df.count()} rows")
-        display(labels_df.head(5))
-    except Exception as e:
-        logger.error(f"Could not read labels table: {e}")
+    labels_table = result["labels_table"]
+    events_table = result["events_table"]
 
     try:
-        events_df = spark.read.format("delta").load(events_path)
-        logger.info(f"✓ Events table exists: {events_df.count()} rows")
-        display(events_df.head(10))
+        labels_df = spark.read.table(labels_table)
+        logger.info(f"✓ {labels_table}: {labels_df.count()} rows")
+        display(labels_df.limit(5))
     except Exception as e:
-        logger.error(f"Could not read events table: {e}")
+        logger.error(f"Could not read {labels_table}: {e}")
+
+    try:
+        events_df = spark.read.table(events_table)
+        logger.info(f"✓ {events_table}: {events_df.count()} rows")
+        display(events_df.limit(10))
+    except Exception as e:
+        logger.error(f"Could not read {events_table}: {e}")

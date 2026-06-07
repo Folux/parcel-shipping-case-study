@@ -47,8 +47,8 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
             "status": "success" or "error",
             "labels_count": int,
             "events_count": int,
-            "labels_path": str,
-            "events_path": str,
+            "labels_table": str,
+            "events_table": str,
             "message": str
         }
 
@@ -108,24 +108,30 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
         events_df = pd.DataFrame(events_list)
         logger.info(f"✓ Events DataFrame has {len(events_df)} rows")
 
-        # ===== Step 7: Write to Delta Tables (Bronze Layer) =====
-        logger.info("Writing data to Bronze tables (landing zone)")
-        labels_path = getattr(config, "delta_labels_path", "/mnt/bronze/labels")
-        events_path = getattr(config, "delta_events_path", "/mnt/bronze/tracking_events")
+        # ===== Step 7: Write to Unity Catalog Tables (Bronze Layer) =====
+        logger.info("Writing data to Bronze tables (Unity Catalog)")
+        catalog = config.catalog_name
+        schema = config.schema_name
+        labels_table = f"{catalog}.{schema}.labels"
+        events_table = f"{catalog}.{schema}.tracking_events"
+
+        # Ensure the target schema exists (no DBFS paths in serverless/UC)
+        logger.info(f"Ensuring schema {catalog}.{schema} exists")
+        spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema}")
 
         write_all(
             spark,
             labels_df,
             events_df,
-            labels_path=labels_path,
-            events_path=events_path,
+            labels_table=labels_table,
+            events_table=events_table,
             mode="overwrite"
         )
         logger.info("✓ Data written to Delta tables")
 
         # ===== Step 8: Validate Written Data =====
         logger.info("Validating written data")
-        validation_results = validate_written_data(spark, labels_path, events_path)
+        validation_results = validate_written_data(spark, labels_table, events_table)
 
         if validation_results["all_valid"]:
             logger.info("✓ All data validated successfully")
@@ -139,16 +145,16 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
             "status": status,
             "labels_count": len(labels_df),
             "events_count": len(events_df),
-            "labels_path": labels_path,
-            "events_path": events_path,
+            "labels_table": labels_table,
+            "events_table": events_table,
             "message": f"Successfully generated {len(labels_df)} labels and {len(events_df)} events"
         }
 
         logger.info("=" * 70)
         logger.info("BRONZE LAYER COMPLETE (Data Landing Zone)")
         logger.info("=" * 70)
-        logger.info(f"Bronze labels: {len(labels_df)} rows → {labels_path}")
-        logger.info(f"Bronze events: {len(events_df)} rows → {events_path}")
+        logger.info(f"Bronze labels: {len(labels_df)} rows → {labels_table}")
+        logger.info(f"Bronze events: {len(events_df)} rows → {events_table}")
         logger.info(f"Status: {status}")
         logger.info("Ready for Silver layer (transformations)")
 
