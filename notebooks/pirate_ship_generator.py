@@ -23,9 +23,10 @@ Usage:
 
 # COMMAND ----------
 
-# CRITICAL: Initialize Spark session (must be first Spark operation in notebook)
-# In Databricks serverless, this initializes the spark context
-_ = spark.sql("SELECT 1")
+# CRITICAL: Initialize Spark session explicitly for Databricks serverless
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("pirate-ship-generator").getOrCreate()
 print("✓ Spark session initialized")
 
 # COMMAND ----------
@@ -44,9 +45,6 @@ print(f"✓ Added to Python path: {src_path}")
 
 # Standard library imports
 import logging
-
-# Third-party imports
-from pyspark.sql import SparkSession
 
 # Local imports
 from pirate_ship_generator.main import main
