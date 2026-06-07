@@ -1,0 +1,58 @@
+# Configuration for Pirate Ship Synthetic Data Generator
+# This file defines all parameters for label and event generation.
+
+# Volume: total number of labels to generate
+num_labels: 5000
+
+# Label generation proportions
+changed_labels_proportion: 0.30            # 30% of labels get updates
+changed_voided_proportion: 0.30            # 30% of changed labels get voided
+voided_fraud_proportion: 0.10              # 10% of voided are fraud (2-5 days later)
+late_arriving_updates_proportion: 0.25     # 25% of multi-row labels have out-of-order rows
+service_class_express_proportion: 0.10     # 10% express, 90% standard per carrier
+insurance_proportion: 0.15                 # 15% of labels are insured
+insurance_0_value_proportion: 0.05         # 5% of insured have $0 value (edge case)
+
+# Event generation proportions
+late_delivery_proportion: 0.03              # 3% of shipments delivered after promised date
+event_out_of_order_proportion: 0.25         # 25% of multi-event labels get shuffled (≈20-30% result)
+event_duplicates_proportion: 0.04           # 4% of events are duplicated (≈3-5% result)
+event_late_arrivals_proportion: 0.075       # 7.5% of events have late arrival (≈5-10% result)
+event_late_arrival_min_days: 2              # Minimum days late
+event_late_arrival_max_days: 8              # Maximum days late
+event_missing_fields_proportion: 0.01       # 1% of events have both code and type NULL
+event_malformed_proportion: 0.01            # 1% of events have malformed timestamps
+timezone_weirdness_proportion: 0.03         # 3% have inconsistent timezone formatting
+voided_label_tracking_proportion: 0.05      # 5% of voided labels still get tracking events
+incomplete_labels_proportion: 0.01          # 1% of labels never reach "delivered"
+
+# Date range: how many days back to generate labels
+date_range_days: 30
+
+# Carrier distribution
+carrier_distribution:
+  USPS: 0.50
+  UPS: 0.30
+  FEDEX: 0.15
+  DHL_ECOM: 0.05
+
+# Event schema drift: which carriers use event_code vs event_type
+event_schema_drift_by_carrier:
+  USPS: "code"
+  UPS: "type"
+  FEDEX: "type"
+  DHL_ECOM: "code"
+
+# Timezone format for event_at field per carrier
+event_timezone_format_by_carrier:
+  USPS: "offset"      # ISO 8601 with offset (e.g., 2026-06-06T10:30:00-05:00)
+  UPS: "utc_z"        # ISO 8601 with Z (e.g., 2026-06-06T10:30:00Z)
+  FEDEX: "utc_plain"  # ISO 8601 without timezone (e.g., 2026-06-06T10:30:00)
+  DHL_ECOM: "tz_abbr" # ISO 8601 with timezone abbreviation (e.g., 2026-06-06T10:30:00 EST)
+
+# Databricks configuration
+catalog_name: "pirate_ship_demo"
+schema_name: "raw"
+
+# Reproducibility: seed for random number generator
+random_seed: 42
