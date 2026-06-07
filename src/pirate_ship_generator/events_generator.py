@@ -197,7 +197,7 @@ def generate_events(labels_df: pd.DataFrame, config: dict) -> list[EventRow]:
         # Apply out-of-order shuffling
         label_events = _shuffle_out_of_order_events(
             label_events,
-            getattr(config, "event_out_of_order_proportion", EVENT_GENERATION["out_of_order_events_proportion"])
+            config.event_out_of_order_proportion
         )
 
         # Add this label's events to the all events list
@@ -206,35 +206,35 @@ def generate_events(labels_df: pd.DataFrame, config: dict) -> list[EventRow]:
     # Apply duplicates to all events
     all_events = _apply_duplicates(
         all_events,
-        getattr(config, "event_duplicates_proportion", 0.04)
+        config.event_duplicates_proportion
     )
 
     # Apply late arrivals to some events
     all_events = _apply_late_arrivals(
         all_events,
-        getattr(config, "event_late_arrivals_proportion", 0.075),
-        getattr(config, "event_late_arrival_min_days", 2),
-        getattr(config, "event_late_arrival_max_days", 8),
+        config.event_late_arrivals_proportion,
+        config.event_late_arrival_min_days,
+        config.event_late_arrival_max_days,
     )
 
     # Apply missing fields to some events
     all_events = _apply_missing_fields(
         all_events,
-        getattr(config, "event_missing_fields_proportion", 0.01),
+        config.event_missing_fields_proportion,
     )
 
     # Apply timestamp issues (malformed or timezone weirdness, mutually exclusive per event)
     all_events = _apply_timestamp_issues(
         all_events,
-        getattr(config, "event_malformed_proportion", 0.01),
-        getattr(config, "timezone_weirdness_proportion", 0.03),
+        config.event_malformed_proportion,
+        config.timezone_weirdness_proportion,
     )
 
     # Apply voided label tracking (add events to some voided labels)
     all_events = _apply_voided_label_tracking(
         all_events,
         labels_df,
-        getattr(config, "voided_label_tracking_proportion", 0.05),
+        config.voided_label_tracking_proportion,
     )
 
     return all_events
