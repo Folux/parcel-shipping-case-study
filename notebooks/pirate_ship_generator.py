@@ -23,18 +23,91 @@ Usage:
 
 # COMMAND ----------
 
-# Add source directory to path (no pip install needed)
+# DEBUG: Setup and path resolution
+print("=" * 70)
+print("DEBUG: SETUP AND PATH RESOLUTION")
+print("=" * 70)
+
 import sys
 import os
+import glob
 
-# Databricks repo path - adjust if your clone path is different
-# Standard clone: /Workspace/Repos/{username}/parcel-shipping-case-study
-notebook_path = dbutils.notebook.entry_point.get_notebook_path()
-repo_root = "/".join(notebook_path.split("/")[:-2])  # Go up from /notebooks/pirate_ship_generator.py
-src_path = f"{repo_root}/src"
+print(f"\n1. Python version: {sys.version}")
+print(f"2. Current working directory: {os.getcwd()}")
+print(f"3. HOME: {os.path.expanduser('~')}")
 
-print(f"Adding to Python path: {src_path}")
-sys.path.insert(0, src_path)
+# List what's in common locations
+print("\n4. Checking common Databricks locations:")
+common_locations = [
+    "/Workspace",
+    "/Workspace/Repos",
+    os.path.expanduser("~"),
+]
+for loc in common_locations:
+    if os.path.exists(loc):
+        contents = os.listdir(loc)[:5]  # First 5 items
+        print(f"   ✓ {loc} exists, contents: {contents}")
+    else:
+        print(f"   ✗ {loc} does not exist")
+
+# Find the src directory
+print("\n5. Looking for src directory:")
+possible_paths = [
+    "/Workspace/Repos/Folux/parcel-shipping-case-study/src",
+    os.path.expanduser("~/parcel-shipping-case-study/src"),
+    "/Workspace/Repos/parcel-shipping-case-study/src",
+    "./src",
+    "../src",
+]
+
+found = False
+found_path = None
+for path in possible_paths:
+    exists = os.path.exists(path)
+    abs_path = os.path.abspath(path)
+    print(f"   Checking: {path}")
+    print(f"     → Absolute: {abs_path}")
+    print(f"     → Exists: {exists}")
+
+    if exists:
+        pirate_ship_init = os.path.exists(os.path.join(path, "pirate_ship_generator/__init__.py"))
+        print(f"     → Has pirate_ship_generator: {pirate_ship_init}")
+
+        if pirate_ship_init:
+            print(f"   ✓ FOUND! Using: {abs_path}")
+            sys.path.insert(0, abs_path)
+            found = True
+            found_path = abs_path
+            break
+
+if not found:
+    print("\n   ✗ Could not find src directory!")
+    print("   Falling back to current directory")
+    sys.path.insert(0, ".")
+    found_path = "."
+
+print(f"\n6. Final sys.path (first 5 entries):")
+for i, p in enumerate(sys.path[:5]):
+    print(f"   [{i}] {p}")
+
+print("\n7. Attempting to import pirate_ship_generator...")
+try:
+    from pirate_ship_generator.main import main
+    print("   ✓ SUCCESS! Import worked!")
+except ImportError as e:
+    print(f"   ✗ FAILED! ImportError: {e}")
+    print(f"\n   Files in {found_path}:")
+    try:
+        files = os.listdir(found_path)[:10]
+        for f in files:
+            print(f"     - {f}")
+    except:
+        print(f"     (could not list directory)")
+    raise
+
+print("\n" + "=" * 70)
+print("DEBUG: SETUP COMPLETE")
+print("=" * 70 + "\n")
 
 # COMMAND ----------
 
