@@ -25,8 +25,12 @@ class GeneratorConfig:
 
     # Event generation proportions
     late_delivery_proportion: float
+    event_out_of_order_proportion: float
     event_duplicates_proportion: float
     event_late_arrivals_proportion: float
+    event_late_arrival_min_days: int
+    event_late_arrival_max_days: int
+    event_missing_fields_proportion: float
     event_malformed_proportion: float
     timezone_weirdness_proportion: float
     voided_label_tracking_proportion: float
