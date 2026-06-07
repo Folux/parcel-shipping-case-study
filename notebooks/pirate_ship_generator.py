@@ -42,8 +42,21 @@ src_path = os.path.abspath("../src")
 sys.path.insert(0, src_path)
 print(f"✓ Added to Python path: {src_path}")
 
-# Confirm the serverless Spark session is usable (uses the injected global)
-print(f"✓ Spark is ready (version {spark.version})")
+# Acquire the serverless Spark session robustly.
+# `from databricks.sdk.runtime import spark` returns the real runtime session
+# and avoids the lazy injected-global placeholder. (databricks-sdk ships with
+# every Databricks runtime, including serverless.)
+from databricks.sdk.runtime import spark
+
+try:
+    _version = spark.version
+    print(f"✓ Spark is ready (version {_version})")
+except SystemError:
+    raise RuntimeError(
+        "Spark could not initialize because a classic Spark session is stuck "
+        "in this Python process. Run `dbutils.library.restartPython()` in a "
+        "cell BY ITSELF, wait for it to finish, then Run All again."
+    )
 
 # COMMAND ----------
 
