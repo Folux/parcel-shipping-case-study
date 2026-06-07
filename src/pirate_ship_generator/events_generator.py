@@ -307,8 +307,11 @@ def _get_tracking_events(label_row: LabelRow) -> TrackingEventSequence:
     voided_at = label_row.get("voided_at")
     label_created_at = label_row.get("label_created_at")
 
-    # Case 1: Label is voided
-    if voided_at is not None:
+    # Case 1: Label is voided.
+    # NOTE: labels come from a pandas DataFrame, so a missing timestamp is NaT,
+    # not None. `pd.notna` correctly treats NaT as "not voided" (plain
+    # `is not None` would misclassify every label as voided).
+    if pd.notna(voided_at):
         # Check if immediately voided (< 1 hour)
         time_delta_hours = (voided_at - label_created_at).total_seconds() / 3600
 
