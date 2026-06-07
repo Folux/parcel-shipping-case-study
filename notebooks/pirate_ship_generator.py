@@ -23,11 +23,9 @@ Usage:
 
 # COMMAND ----------
 
-# CRITICAL: Initialize Spark session explicitly for Databricks serverless
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.appName("pirate-ship-generator").getOrCreate()
-print("✓ Spark session initialized")
+# Spark is already initialized by Databricks - just use it
+# Do a simple operation to ensure it's ready
+print(f"✓ Using Spark session: {spark.version}")
 
 # COMMAND ----------
 
