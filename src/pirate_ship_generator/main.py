@@ -69,17 +69,24 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
 
         # ===== Step 2: Initialize Spark =====
         logger.info("Initializing SparkSession")
-        if spark is None:
-            # Create a new session (for local testing, not in Databricks)
-            logger.info("Creating new SparkSession")
-            spark = SparkSession.builder \
-                .appName("pirate-ship-generator") \
-                .config("spark.sql.adaptive.enabled", "true") \
-                .getOrCreate()
-            logger.info("✓ SparkSession created")
-        else:
-            # Use the provided spark session (from Databricks notebook)
+        if spark is not None:
+            # Use the provided spark session (from a Databricks notebook)
             logger.info("✓ Using provided SparkSession")
+        else:
+            # No session passed. Reuse an already-active one if present
+            # (NEVER create a new one in Databricks serverless — a classic
+            # session conflicts with the serverless Spark Connect session).
+            spark = SparkSession.getActiveSession()
+            if spark is not None:
+                logger.info("✓ Reusing active SparkSession")
+            else:
+                # Local / non-Databricks only (e.g. pytest): safe to create one
+                logger.info("No active session found — creating one (local mode)")
+                spark = SparkSession.builder \
+                    .appName("pirate-ship-generator") \
+                    .config("spark.sql.adaptive.enabled", "true") \
+                    .getOrCreate()
+                logger.info("✓ SparkSession created")
 
         # ===== Step 3: Generate Base Labels =====
         logger.info("Generating base labels")

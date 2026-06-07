@@ -23,6 +23,17 @@ Usage:
 
 # COMMAND ----------
 
+# IMPORTANT (Databricks serverless):
+# `spark` is the serverless Spark Connect session injected by Databricks.
+# NEVER call SparkSession.builder.getOrCreate() in serverless — it creates a
+# classic local session that permanently breaks the serverless `spark` for the
+# rest of the Python process (error: "spark should be initialized with the
+# first notebook command"). If you ever hit that error, run this in a cell by
+# itself to get a clean interpreter, then Run All:
+#     dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # Setup: Add source directory to path
 import sys
 import os
@@ -31,9 +42,8 @@ src_path = os.path.abspath("../src")
 sys.path.insert(0, src_path)
 print(f"✓ Added to Python path: {src_path}")
 
-# Spark initialization (must happen early in notebook)
-print(f"✓ Spark version: {spark.version}")
-print(f"✓ Spark is ready")
+# Confirm the serverless Spark session is usable (uses the injected global)
+print(f"✓ Spark is ready (version {spark.version})")
 
 # COMMAND ----------
 
