@@ -24,9 +24,12 @@ Usage:
 # COMMAND ----------
 
 # Install the package from repo
-notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
-repo_path = "/".join(notebook_path.split("/")[:-2])  # Remove /notebooks and /filename
-%pip install -e {repo_path}
+%pip install -e git+https://github.com/Folux/parcel-shipping-case-study.git#egg=pirate_ship_generator
+
+# COMMAND ----------
+
+# Restart Python kernel to load newly installed package
+%restart_python
 
 # COMMAND ----------
 
