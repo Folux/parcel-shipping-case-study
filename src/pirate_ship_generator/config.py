@@ -76,4 +76,40 @@ def load_config(config_path: str) -> GeneratorConfig:
     if config_dict is None:
         raise ValueError("Config file is empty")
 
+    # DEBUG: Show what we're loading
+    print("\n" + "=" * 70)
+    print("DEBUG: CONFIG LOADING")
+    print("=" * 70)
+    print(f"Config path: {path.absolute()}")
+    print(f"\nKeys in config file ({len(config_dict)} total):")
+    for key in sorted(config_dict.keys()):
+        print(f"  - {key}")
+
+    # Show expected fields
+    print(f"\nFields expected by GeneratorConfig ({len(GeneratorConfig.__dataclass_fields__)} total):")
+    for field_name in sorted(GeneratorConfig.__dataclass_fields__.keys()):
+        print(f"  - {field_name}")
+
+    # Find mismatches
+    config_keys = set(config_dict.keys())
+    expected_keys = set(GeneratorConfig.__dataclass_fields__.keys())
+
+    extra_in_config = config_keys - expected_keys
+    missing_in_config = expected_keys - config_keys
+
+    if extra_in_config:
+        print(f"\n⚠️  EXTRA keys in config (not expected by class):")
+        for key in sorted(extra_in_config):
+            print(f"  - {key}")
+
+    if missing_in_config:
+        print(f"\n⚠️  MISSING keys in config (expected by class):")
+        for key in sorted(missing_in_config):
+            print(f"  - {key}")
+
+    if not extra_in_config and not missing_in_config:
+        print(f"\n✓ All keys match!")
+
+    print("=" * 70 + "\n")
+
     return GeneratorConfig(**config_dict)
