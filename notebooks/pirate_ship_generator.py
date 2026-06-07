@@ -28,11 +28,6 @@ Usage:
 
 # COMMAND ----------
 
-# Restart Python to load newly installed package
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
 # Standard library imports
 import logging
 
