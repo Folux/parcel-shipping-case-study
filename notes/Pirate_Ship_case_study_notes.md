@@ -467,6 +467,98 @@
 
 ---
 
+### ✅ 2026-06-07 (Session 4 - Databricks Deployment & Bug Fixes) - PRODUCTION DEPLOYMENT COMPLETE
+
+**Objective**: Deploy the pirate_ship_generator to Databricks serverless and resolve deployment issues.
+
+**Major Challenges & Solutions**:
+
+#### Challenge 1: Spark Session Management in Databricks Serverless
+**Problem**: The notebook repeatedly failed with `spark should be initialized with the first notebook command` or `Cannot start a remote Spark session because there is a regular Spark session already running`.
+
+**Root Cause**: Databricks serverless uses **Spark Connect** (a remote session injected by the runtime). Previous debugging iterations had called `SparkSession.builder.getOrCreate()` multiple times in different cells, creating classic local Spark sessions that permanently conflicted with the serverless Spark Connect session. Unlike regular Python modules which can be reloaded via `del sys.modules`, a poisoned Spark session persists for the lifetime of the Python process.
+
+**Solution**:
+1. **Never create a SparkSession in Databricks serverless** — use only the injected `spark` global
+2. **In main.py**: Use `SparkSession.getActiveSession()` as fallback (for local testing), never `builder.getOrCreate()` in production code
+3. **Recovery method**: `dbutils.library.restartPython()` (not `%restartPython` or `del sys.modules`, which don't kill the session)
+4. **Code**: Added safeguard in main.py to detect serverless vs local environment
+
+#### Challenge 2: DBFS Access Disabled in Serverless + Unity Catalog
+**Problem**: Code tried to write to `/mnt/bronze/labels`, but serverless with UC blocks all DBFS root access with `[DBFS_DISABLED] Public DBFS root is disabled. Access is denied on path: /mnt/bronze/labels/_delta_log`.
+
+**Root Cause**: Databricks serverless enforces Unity Catalog exclusively — no DBFS writes to `/mnt/`.
+
+**Solution**:
+1. **Switch to UC managed tables**: Use `saveAsTable(catalog.schema.table)` instead of `save(path)`
+2. **Build table names from config**: `catalog_name` and `schema_name` → `workspace.raw.labels`, `workspace.raw.tracking_events`
+3. **Auto-detect catalog**: Added `_resolve_catalog()` function that falls back to the reviewer's `current_catalog()` if configured catalog doesn't exist (portability)
+4. **Create schema on write**: Run `CREATE SCHEMA IF NOT EXISTS catalog.schema` before writing
+5. **Update all read/write paths**: `spark.read.format("delta").load(path)` → `spark.read.table(table_name)`, etc.
+
+#### Challenge 3: Event Generation Bug - Pandas NaT Voiding
+**Problem**: Generated only ~4,800 events for 5,000 labels (~0.96 events/label), when expected ~3.76 events/label (~18,800 total).
+
+**Root Cause**: `_get_tracking_events()` used `if voided_at is not None:` to check for voiding. But labels come from a **pandas DataFrame**, where a missing datetime is **NaT** (Not-a-Time), not `None`. Since `pd.NaT is not None` evaluates to `True`, every label was misclassified as voided, routing them all to the low-event "late voided" branch (50/50 split on 0-3 events).
+
+**Solution**:
+1. Use `pd.notna(voided_at)` instead of `is not None` — correctly treats NaT as "not voided"
+2. Added explanatory comment in code for future maintainers
+3. **Result**: Events increased from 4,822 to 18,797 (~3.76/label) ✅
+
+**Data Quality Verification**:
+- ✅ 5,000 unique labels → 7,039 CDC rows (expected: 30% changed, ~9% voided)
+- ✅ 18,797 events (expected: ~91% of labels with full 4-event sequence, rest with fewer)
+- ✅ Events/label ratio: 3.76 (expected: ~3.75 for stated proportions)
+
+#### Challenge 4: Config Schema Validation & Error Messages
+**Problem**: Early failures had cryptic errors about missing config keys; no clear feedback on what was wrong.
+
+**Solution**:
+1. **Added `GeneratorConfig.validate()` method**: Checks all proportions are 0-1, all integers positive, carrier distribution sums to 1.0, dates make sense, etc.
+2. **Simplified config loader**: Replaced verbose debug dumps with concise key-mismatch check that raises clear error
+3. **Result**: Failures now show exactly what's wrong: `Config does not match GeneratorConfig — missing keys: [...]; unexpected keys: [...]`
+
+#### Challenge 5: Debugging Scaffolding Cleanup
+**Problem**: Notebook had accumulated debugging blocks (DEBUG: CONFIG LOADING, DEBUG: RESULT OBJECT, DEBUG: CONFIG FILE LOCATION) that obscured the actual workflow.
+
+**Solution**:
+1. Removed all debug print blocks from notebook
+2. Replaced verbose config debug dump with one-liner key-check
+3. Kept only essential logging and meaningful success messages
+4. **Result**: Notebook reduced from 181 → 65 lines, clean workflow visible at a glance
+
+**Final Notebook Workflow** (6 cells):
+1. Setup: Add `../src` to Python path
+2. Imports: Load pirate_ship_generator module
+3. Widget: Config file path input
+4. Run: Execute `main(config_path, spark=spark)` and print summary
+5. Verify: Read generated tables and display samples
+
+**Config Changes**:
+- Updated `config.yaml`: `catalog_name: "workspace"` (from `pirate_ship_demo`), compatible with any reviewer's workspace
+
+**Testing**:
+- ✅ Notebook runs to completion on Databricks serverless
+- ✅ Generates 5,000 labels, 18,797 events
+- ✅ Writes to Unity Catalog tables (`workspace.raw.labels`, `workspace.raw.tracking_events`)
+- ✅ Verification displays correct row counts and sample data
+
+**Session 4 Commits**:
+1. Fix serverless Spark: never create classic session, reuse serverless spark
+2. Add comprehensive config validation with clear error messages - remove default values
+3. Fix all config.get() calls - use getattr() for dataclass
+4. Use sys.path instead of pip install for package import
+5. Fix config path: use ../config.yaml to find file at repo root
+6. Write Bronze layer to Unity Catalog managed tables instead of DBFS paths
+7. Auto-detect write catalog: fall back to current_catalog() when configured catalog is absent
+8. Remove debugging scaffolding and simplify notebook + config loader
+9. Fix event undercount: treat pandas NaT as not-voided
+
+**Status**: ✅ **PRODUCTION READY FOR REVIEW**
+
+---
+
 ### ⏳ 2026-06-07 (Session 3 Continued) - Section 4b: Bronze → Silver → Gold Pipeline - SPECS CREATED
 
 **Specification file created**: `planning/specs/SPEC_4b_Pipeline.md`
