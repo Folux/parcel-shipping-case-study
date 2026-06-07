@@ -23,6 +23,13 @@ Usage:
 
 # COMMAND ----------
 
+# CRITICAL: Initialize Spark session (must be first Spark operation in notebook)
+# In Databricks serverless, this initializes the spark context
+_ = spark.sql("SELECT 1")
+print("✓ Spark session initialized")
+
+# COMMAND ----------
+
 # Add source directory to path (works for Databricks serverless)
 import sys
 import os
