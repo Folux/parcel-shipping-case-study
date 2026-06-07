@@ -24,13 +24,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(config_path: str = "config.yaml") -> dict:
+def main(config_path: str = "config.yaml", spark=None) -> dict:
     """
     Main orchestration function for synthetic data generation.
 
     Workflow:
     1. Load configuration from YAML
-    2. Create SparkSession
+    2. Create SparkSession (if not provided)
     3. Generate base labels
     4. Apply CDC changes (voiding, field updates)
     5. Generate tracking events
@@ -39,6 +39,7 @@ def main(config_path: str = "config.yaml") -> dict:
 
     Args:
         config_path: Path to config.yaml file (default: "config.yaml")
+        spark: SparkSession instance (optional, will create if not provided)
 
     Returns:
         Dictionary with generation statistics:
@@ -68,11 +69,17 @@ def main(config_path: str = "config.yaml") -> dict:
 
         # ===== Step 2: Initialize Spark =====
         logger.info("Initializing SparkSession")
-        spark = SparkSession.builder \
-            .appName("pirate-ship-generator") \
-            .config("spark.sql.adaptive.enabled", "true") \
-            .getOrCreate()
-        logger.info("✓ SparkSession initialized")
+        if spark is None:
+            # Create a new session (for local testing, not in Databricks)
+            logger.info("Creating new SparkSession")
+            spark = SparkSession.builder \
+                .appName("pirate-ship-generator") \
+                .config("spark.sql.adaptive.enabled", "true") \
+                .getOrCreate()
+            logger.info("✓ SparkSession created")
+        else:
+            # Use the provided spark session (from Databricks notebook)
+            logger.info("✓ Using provided SparkSession")
 
         # ===== Step 3: Generate Base Labels =====
         logger.info("Generating base labels")

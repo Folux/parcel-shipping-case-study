@@ -86,12 +86,19 @@ logger.info(f"  events_path: {events_path}")
 
 # COMMAND ----------
 
+# Get the Databricks spark session (automatically available in notebooks)
+from pyspark.sql import SparkSession
+spark = SparkSession.getOrCreate()
+logger.info(f"Using Spark session: {spark.sparkContext.appName}")
+
+# COMMAND ----------
+
 # Run the main orchestration
 logger.info("=" * 70)
 logger.info("STARTING PIRATE SHIP SYNTHETIC DATA GENERATION")
 logger.info("=" * 70)
 
-result = main(config_path)
+result = main(config_path, spark=spark)
 
 # COMMAND ----------
 
