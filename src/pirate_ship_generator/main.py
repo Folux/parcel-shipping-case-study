@@ -103,8 +103,8 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
 
         # ===== Step 7: Write to Delta Tables (Bronze Layer) =====
         logger.info("Writing data to Bronze tables (landing zone)")
-        labels_path = config.get("delta_labels_path", "/mnt/bronze/labels")
-        events_path = config.get("delta_events_path", "/mnt/bronze/tracking_events")
+        labels_path = getattr(config, "delta_labels_path", "/mnt/bronze/labels")
+        events_path = getattr(config, "delta_events_path", "/mnt/bronze/tracking_events")
 
         write_all(
             spark,
