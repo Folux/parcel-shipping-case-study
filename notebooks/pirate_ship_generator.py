@@ -153,8 +153,6 @@ display(result)
 if result['status'] in ['success', 'success_with_warnings']:
     logger.info("Verifying generated tables...")
 
-    spark = SparkSession.builder.appName("verify").getOrCreate()
-
     try:
         labels_df = spark.read.format("delta").load(labels_path)
         logger.info(f"✓ Labels table exists: {labels_df.count()} rows")
