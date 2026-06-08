@@ -13,7 +13,7 @@ from pirate_ship_generator.schemas import (
 def write_labels(
     spark: SparkSession,
     labels_df: pd.DataFrame,
-    table_name: str = "workspace.raw.labels",
+    table_name: str = "skullport.raw.labels",
     mode: str = "overwrite",
 ) -> None:
     """
@@ -46,7 +46,7 @@ def write_labels(
 def write_events(
     spark: SparkSession,
     events_df: pd.DataFrame,
-    table_name: str = "workspace.raw.tracking_events",
+    table_name: str = "skullport.raw.tracking_events",
     mode: str = "overwrite",
 ) -> None:
     """
@@ -80,8 +80,8 @@ def write_all(
     spark: SparkSession,
     labels_df: pd.DataFrame,
     events_df: pd.DataFrame,
-    labels_table: str = "workspace.raw.labels",
-    events_table: str = "workspace.raw.tracking_events",
+    labels_table: str = "skullport.raw.labels",
+    events_table: str = "skullport.raw.tracking_events",
     mode: str = "overwrite",
 ) -> dict:
     """
@@ -125,8 +125,8 @@ def write_all(
 
 def validate_written_data(
     spark: SparkSession,
-    labels_table: str = "workspace.raw.labels",
-    events_table: str = "workspace.raw.tracking_events",
+    labels_table: str = "skullport.raw.labels",
+    events_table: str = "skullport.raw.tracking_events",
 ) -> dict:
     """
     Validate written data in Unity Catalog Delta tables.

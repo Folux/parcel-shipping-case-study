@@ -52,7 +52,7 @@ event_timezone_format_by_carrier:
 
 # Databricks configuration (Unity Catalog managed tables)
 # Tables are written as {catalog_name}.{schema_name}.labels and .tracking_events
-catalog_name: "workspace"
+catalog_name: "skullport"
 schema_name: "raw"
 
 # Reproducibility: seed for random number generator
