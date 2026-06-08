@@ -1,20 +1,95 @@
-# Quick Start - Bronze Layer Deployment
+# Quick Start
 
-## To get it running on  Databricks
+Two ways to run the pipeline:
 
-- Log into your Databricks account
-- Click **New** → **Git folder**
-- Paste repo URL: `https://github.com/Folux/parcel-shipping-case-study.git`
-- Click **Clone**
-- From your Workspace home navigate to: `parcel-shipping-case-study/notebooks/skullport_generator.py`
-- Click **Run all**
-- Wait 5-10 minutes for completion
-- Check Databricks Catalog:
-  - `pirate_ship.bronze.labels` (~5000 rows)
-  - `pirate_ship.bronze.tracking_events` (~30000 rows)
-- Done! Bronze layer deployed ✅
+- **A. Notebooks** — Bronze → Silver → Gold, no extra tooling. Fastest way to see results.
+- **B. dbt via Databricks Asset Bundle** — builds the Silver layer with dbt, deployed from the CLI (the packaging the case study asks for).
 
-## Next Steps
+The notebooks auto-create the `skullport` Unity Catalog catalog, so no manual catalog setup is needed.
 
-- Silver layer implementation: Coming soon
-- For details, see: `planning/specs/SPEC_4b_Pipeline.md`
+---
+
+## A. Run the notebooks
+
+1. Log into your Databricks workspace
+2. **New** → **Git folder**
+3. Repo URL: `https://github.com/Folux/parcel-shipping-case-study.git` → **Clone**
+4. In `parcel-shipping-case-study/notebooks/`, run **Run all** on each, in order:
+   - `ingestion_and_bronze_layer.py` → creates `skullport.raw.labels` (~5,000) and `skullport.raw.tracking_events` (~19,000)
+   - `silver_layer.py` → `skullport.silver.labels`, `skullport.silver.tracking_events`
+   - `gold_layer.py` → `skullport.gold.delivery_performance` (one row per label, on-time metric)
+   - `validation_checks.py` → asserts data-quality checks across Silver + Gold (fails loudly if anything is off)
+5. Done ✅
+
+---
+
+## B. Run the Silver layer with dbt (Asset Bundle)
+
+This deploys a Databricks Job that runs the dbt Silver models. It reads the
+existing `skullport.raw.*` tables (run **A** steps 1–4 first) and writes to
+`skullport.silver_dbt.*` — a separate schema, so it won't disturb the notebook
+output.
+
+### 1. Install the Databricks CLI
+
+```bash
+# macOS / Linux (Homebrew)
+brew tap databricks/tap
+brew install databricks
+
+# or via the universal install script
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+```
+Verify: `databricks --version` (needs v0.218+ for bundles).
+
+### 2. Authenticate to your workspace
+
+```bash
+databricks auth login --host https://YOUR-WORKSPACE.cloud.databricks.com
+```
+Follow the browser prompt. This stores a profile the CLI reuses.
+
+### 3. Configure a SQL warehouse
+
+dbt executes its models against a SQL warehouse.
+
+- In Databricks: **SQL** → **SQL Warehouses** → use an existing warehouse or **Create**.
+- Start it, then open it → **Connection details** and copy the **warehouse ID**
+  (also visible in the warehouse URL).
+
+### 4. Point the bundle at your workspace
+
+Edit `databricks.yml` → `targets.dev.workspace.host` to your workspace URL
+(or pass `-p <profile>` on the commands below and remove that line).
+
+### 5. Deploy and run
+
+From the repo root:
+
+```bash
+databricks bundle validate -t dev
+databricks bundle deploy   -t dev
+databricks bundle run skullport_dbt_silver -t dev --var="warehouse_id=<your-warehouse-id>"
+```
+
+### 6. Verify
+
+```sql
+SELECT COUNT(*) FROM skullport.silver_dbt.labels;             -- ~5,000
+SELECT event_name, COUNT(*)
+FROM skullport.silver_dbt.tracking_events
+GROUP BY event_name;                                          -- canonical names
+```
+
+See `dbt/README.md` for project layout and details.
+
+---
+
+## Catalog overview
+
+| Table | Built by | Notes |
+|-------|----------|-------|
+| `skullport.raw.labels` / `…tracking_events` | Bronze notebook | Synthetic landing zone |
+| `skullport.silver.labels` / `…tracking_events` | Silver notebook | Cleaned, conformed |
+| `skullport.silver_dbt.labels` / `…tracking_events` | dbt (Asset Bundle) | Same logic, built by dbt |
+| `skullport.gold.delivery_performance` | Gold notebook | One row per label, on-time metric |
