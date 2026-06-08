@@ -813,3 +813,27 @@ All 7 modules have been implemented and tested:
 
 **Phase 2 (next): dbt migration** — re-express Silver/Gold as dbt models, convert `validation_checks.py` into dbt tests, package via Databricks Asset Bundle. (Follow-up questions pending before we start.)
 
+---
+
+### ✅ 2026-06-08 - Phase 2: dbt + Asset Bundle — FEATURE COMPLETE 🏁
+
+**dbt now owns Silver + Gold.**
+- `dbt/` project: `labels`, `tracking_events` (Silver) + `delivery_performance` (Gold), ported from the notebook SQL; generic tests (`unique`, `not_null`, `relationships`, `accepted_values`); `generate_schema_name` macro for absolute schemas.
+- **Databricks Asset Bundle** (`databricks.yml`): single Job with a serverless `dbt_task` running `dbt build` against a SQL warehouse. Two-command path: `bundle deploy --var=warehouse_id=… ` then `bundle run skullport_dbt_build`. Host from the auth profile, warehouse id on deploy — nothing workspace-specific committed.
+
+**Spike → proven → promoted.**
+- First built dbt into isolated `silver_dbt` / `gold_dbt` schemas, validated on **Free Edition serverless** (had to bump the serverless env `client` "1"→"2"), then a `parity_checks` notebook proved the dbt output was **row-for-row identical** to the notebook output (ignoring `inserted_at`).
+- Once parity passed: promoted dbt to own `skullport.silver` / `skullport.gold`, deleted `silver_layer.py`, `gold_layer.py`, `parity_checks.py`.
+
+**Final architecture (each tool where it earns its place):**
+- **PySpark** → Bronze generator (`ingestion_and_bronze_layer.py`)
+- **dbt** → Silver + Gold (production transformation layer, tested, bundle-deployed)
+- **Databricks SQL** → `validation_checks.py` (cross-layer data-quality gate)
+
+**Cleanup pass.**
+- Rewrote `README.md` (architecture + tool-choice justification) and `QUICK_START.md` (Bronze notebook → dbt bundle → validation).
+- Fixed pipeline spec title numbering (`4a.N` → `4b.N`).
+- Confirmed no cache cruft tracked (all gitignored).
+
+**Status:** MVP feature-complete. Pipeline runs out-of-the-box on Databricks Free Edition. Future ideas remain in `NICE_TO_HAVE.md` (incremental/merge, analytical marts, dbt test expansion, richer realism).
+
