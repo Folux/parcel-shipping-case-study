@@ -116,6 +116,49 @@ WITH deduped AS (
     ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_received_at DESC) AS rn
   FROM skullport.raw.tracking_events
 ),
+normalized AS (
+  -- Normalize every carrier-specific / corrupted event_at string into an
+  -- explicit-offset ISO 8601 string, so a single parse yields the correct UTC instant.
+  SELECT
+    event_id,
+    label_id,
+    carrier,
+    event_code,
+    event_type,
+    event_at AS event_at_raw,
+    event_received_at,
+    location_zip,
+    raw_payload,
+    -- Trailing timezone abbreviation, e.g. " EST" (empty string if none)
+    regexp_extract(event_at, ' ([A-Z]{2,4})$', 1) AS tz_abbr,
+    CASE
+      -- 1) Timezone abbreviation (DHL) -> swap abbr for its numeric UTC offset
+      WHEN regexp_extract(event_at, ' ([A-Z]{2,4})$', 1) <> '' THEN
+        regexp_replace(event_at, ' [A-Z]{2,4}$', '') ||
+        CASE regexp_extract(event_at, ' ([A-Z]{2,4})$', 1)
+          WHEN 'EST' THEN '-05:00' WHEN 'EDT' THEN '-04:00'
+          WHEN 'CST' THEN '-06:00' WHEN 'CDT' THEN '-05:00'
+          WHEN 'MST' THEN '-07:00' WHEN 'MDT' THEN '-06:00'
+          WHEN 'PST' THEN '-08:00' WHEN 'PDT' THEN '-07:00'
+          ELSE 'Z'
+        END
+      -- 2) Already carries an explicit offset or Z (USPS, UPS) -> keep as-is
+      WHEN event_at RLIKE 'T[0-9]{2}:[0-9]{2}:[0-9]{2}([+-][0-9]{2}:[0-9]{2}|Z)$' THEN event_at
+      -- 3) Corrupted: no separators (20260606T053000) -> rebuild + assume UTC (tz was destroyed)
+      WHEN event_at RLIKE '^[0-9]{8}T[0-9]{6}$' THEN
+        substr(event_at,1,4)||'-'||substr(event_at,5,2)||'-'||substr(event_at,7,2)||'T'||
+        substr(event_at,10,2)||':'||substr(event_at,12,2)||':'||substr(event_at,14,2)||'Z'
+      -- 4) Corrupted: wrong separators (slashes) -> dashes + assume UTC
+      WHEN event_at RLIKE '^[0-9]{4}/[0-9]{2}/[0-9]{2}' THEN replace(event_at,'/','-')||'Z'
+      -- 5) Corrupted: date only (missing time) -> midnight UTC
+      WHEN event_at RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN event_at||'T00:00:00Z'
+      -- 6) Plain ISO, no tz (FEDEX) -> assume UTC
+      WHEN event_at RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$' THEN event_at||'Z'
+      ELSE event_at
+    END AS normalized_iso
+  FROM deduped
+  WHERE rn = 1
+),
 parsed_events AS (
   SELECT
     event_id,
@@ -123,17 +166,24 @@ parsed_events AS (
     carrier,
     -- Merge event codes and types
     COALESCE(event_code, event_type, 'UNKNOWN') AS event_name,
-    -- Parse event_at to timestamp with fallback
-    TRY_CAST(event_at AS TIMESTAMP) AS event_at,
+    -- Parse the normalized string into a UTC timestamp
+    try_to_timestamp(normalized_iso) AS event_at,
     event_received_at,
     location_zip,
     raw_payload,
     -- Quality flags
-    CASE WHEN TRY_CAST(event_at AS TIMESTAMP) IS NULL THEN TRUE ELSE FALSE END AS is_malformed_timestamp,
+    -- Malformed = source string was a corrupted format (separators/time destroyed,
+    -- so the timezone was lost and the instant is best-effort) or is unparseable.
+    CASE
+      WHEN event_at_raw RLIKE '^[0-9]{8}T[0-9]{6}$' THEN TRUE          -- no separators
+      WHEN event_at_raw RLIKE '^[0-9]{4}/[0-9]{2}/[0-9]{2}' THEN TRUE  -- wrong separators
+      WHEN event_at_raw RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN TRUE -- date only
+      WHEN try_to_timestamp(normalized_iso) IS NULL THEN TRUE          -- unparseable
+      ELSE FALSE
+    END AS is_malformed_timestamp,
     CASE WHEN event_code IS NULL AND event_type IS NULL THEN TRUE ELSE FALSE END AS is_missing_event_type,
     current_timestamp() AS inserted_at
-  FROM deduped
-  WHERE rn = 1
+  FROM normalized
 ),
 with_voided_flag AS (
   SELECT
