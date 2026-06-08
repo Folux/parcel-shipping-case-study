@@ -34,8 +34,7 @@ output.
 
 ```bash
 # macOS / Linux (Homebrew)
-brew tap databricks/tap
-brew install databricks
+brew install databricks/tap/databricks
 
 # or via the universal install script
 curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
