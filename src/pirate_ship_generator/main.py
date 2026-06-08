@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 def _resolve_catalog(spark, preferred: str) -> str:
     """
-    Verify that the required Unity Catalog exists.
+    Ensure the required Unity Catalog exists, creating it if necessary.
 
-    The case study requires the configured catalog (from config.yaml) to exist.
-    No fallback — explicit requirement for consistent table placement.
+    Attempts to create the catalog if it doesn't exist, ensuring the notebook
+    works out-of-the-box for reviewers without manual setup.
     """
     try:
         catalogs = [row[0] for row in spark.sql("SHOW CATALOGS").collect()]
@@ -38,14 +38,23 @@ def _resolve_catalog(spark, preferred: str) -> str:
             f"Failed to list catalogs: {e}. Ensure you're on a Unity Catalog workspace."
         )
 
-    if preferred not in catalogs:
-        raise ValueError(
-            f"Required catalog '{preferred}' not found in this workspace. "
-            f"Available catalogs: {', '.join(catalogs)}. "
-            f"Create the '{preferred}' catalog or update config.yaml."
-        )
+    if preferred in catalogs:
+        logger.info(f"✓ Catalog '{preferred}' exists")
+        return preferred
 
-    return preferred
+    # Catalog doesn't exist — attempt to create it
+    logger.info(f"Catalog '{preferred}' not found. Attempting to create...")
+    try:
+        spark.sql(f"CREATE CATALOG IF NOT EXISTS {preferred}")
+        logger.info(f"✓ Created catalog '{preferred}'")
+        return preferred
+    except Exception as e:
+        raise ValueError(
+            f"Catalog '{preferred}' not found and could not be created. "
+            f"Error: {e}. You may lack 'CREATE CATALOG' permissions. "
+            f"Contact your Databricks workspace admin, or update config.yaml "
+            f"to use a different catalog (available: {', '.join(catalogs)})."
+        )
 
 
 def main(config_path: str = "config.yaml", spark=None) -> dict:
