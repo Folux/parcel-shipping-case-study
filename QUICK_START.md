@@ -70,16 +70,22 @@ and you pass the warehouse ID on deploy (it gets baked into the job):
 ```bash
 databricks bundle validate
 databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
-databricks bundle run skullport_dbt_silver
+databricks bundle run skullport_dbt_build
 ```
 
 ### 5. Verify
 
 ```sql
+-- Silver
 SELECT COUNT(*) FROM skullport.silver_dbt.labels;             -- ~5,000
 SELECT event_name, COUNT(*)
 FROM skullport.silver_dbt.tracking_events
 GROUP BY event_name;                                          -- canonical names
+
+-- Gold
+SELECT COUNT(*) FROM skullport.gold_dbt.delivery_performance; -- ~5,000
+SELECT ROUND(100.0*SUM(CASE WHEN is_delivered_on_time THEN 1 ELSE 0 END)/COUNT(*),1) AS pct_on_time
+FROM skullport.gold_dbt.delivery_performance;                 -- ~86%
 ```
 
 See `dbt/README.md` for project layout and details.

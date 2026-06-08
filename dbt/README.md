@@ -26,7 +26,7 @@ From the repo root (see the top-level `QUICK_START.md` for full setup):
 
 ```bash
 databricks bundle deploy --var="warehouse_id=<warehouse-id>"
-databricks bundle run skullport_dbt_silver
+databricks bundle run skullport_dbt_build
 ```
 
 ## Layout

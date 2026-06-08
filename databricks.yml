@@ -11,7 +11,7 @@
 #
 # Deploy + run (pass your warehouse id on deploy; it is baked into the job):
 #   databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
-#   databricks bundle run skullport_dbt_silver
+#   databricks bundle run skullport_dbt_build
 #
 # warehouse_id = last segment of the warehouse's HTTP path: /sql/1.0/warehouses/<id>
 # (If your auth profile isn't the DEFAULT one, add -p <profile> to the commands.)
@@ -26,10 +26,10 @@ variables:
 
 resources:
   jobs:
-    skullport_dbt_silver:
-      name: skullport_dbt_silver
+    skullport_dbt_build:
+      name: skullport_dbt_build
       tasks:
-        - task_key: dbt_silver
+        - task_key: dbt_build
           environment_key: dbt_env
           dbt_task:
             project_directory: dbt
