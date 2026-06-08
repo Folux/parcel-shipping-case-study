@@ -415,6 +415,60 @@
 
 **Total Tests Passing**: 230 (15 schemas + 35 labels + 95 events + 30 writer + 28 main + 27 notebook)
 
+### ✅ 2026-06-08 (Session 5 Continued) - Silver Layer Specification & Implementation Plan Complete
+
+**Objective**: Define Silver layer specs and implementation plan (notebook MVP + Phase 2 dbt planned).
+
+**Deliverables Created**:
+
+1. **SPEC_4a_1_Bronze_Layer.md** (renamed from SPEC_4a_Data_Generator.md)
+   - Bronze layer schema (raw.labels, raw.tracking_events)
+   - CDC structure, data quality issues documented
+
+2. **SPEC_4a_2_Silver_Layer.md** (renamed from SPEC_4c_Silver_Layer.md)
+   - **Silver Tables**:
+     - `silver.labels` (16 columns): CDC collapse, 4 fraud flags, inserted_at
+     - `silver.tracking_events` (13 columns): deduplication, event_name merge, timestamp parsing, 3 quality flags
+   - **Data Quality Handling**: Keep all rows, flag suspicious/malformed instead of drop
+   - **Idempotency**: OVERWRITE mode (MVP), merge/upsert planned for Phase 2
+   - **Flag Naming**:
+     - `is_*` = definite state (malformed_timestamp, missing_event_type, event_on_voided_label)
+     - `can_be_*` = suspicious pattern (weight_fraud, void_fraud, insurance_anomaly, missing_zip)
+   - **Success Criteria**: 6 checklist items, MVP focused
+
+3. **IMPL_4b_2_Silver_Layer.md** (new)
+   - **Phase 1 (Notebook MVP)**: 5-step implementation
+     1. Load Bronze tables
+     2. Transform silver.labels (CDC collapse, fraud flags)
+     3. Transform silver.tracking_events (dedup, event_name merge, timestamp parsing, flags)
+     4. Referential integrity cleanup
+     5. Validation checks
+   - **Phase 2 (dbt)**: Deferred — planned once Phase 1 complete
+   - **Key Decisions** table: rationale for design choices
+   - **Testing**: Simple SQL validation in notebook (Phase 1)
+   - **Success Criteria**: 6 checklist items
+
+**Key Design Decisions**:
+
+| Decision | Why |
+|----------|-----|
+| Keep all rows, flag instead of drop | Preserve audit trail; transparency |
+| Fraud flags, not quarantine | Data available for downstream investigation |
+| OVERWRITE write mode | Simple, safe, idempotent for MVP |
+| Parse event_at with fallback | Maximize data retention; use event_received_at if unparseable |
+| Collapse CDC to latest | Single row per label (analytics want current state) |
+
+**Nice-to-Have Additions**:
+
+- **Incremental Loads: Late-Arriving Events** — Phase 2 feature for merge/upsert strategy
+- **Orphaned Tracking Events Table** — Capture events without matching labels for debugging
+
+**Naming Convention Aligned**:
+- Specs: `SPEC_4a_1_Bronze_Layer.md`, `SPEC_4a_2_Silver_Layer.md`
+- Implementation: `IMPL_4b_1_Bronze_Layer.md`, `IMPL_4b_2_Silver_Layer.md`
+
+**Status**: ✅ **SPECS & IMPLEMENTATION PLAN APPROVED** — Ready for Phase 1 notebook implementation
+
 ---
 
 ## Next Steps (When Ready)
