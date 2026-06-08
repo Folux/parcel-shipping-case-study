@@ -45,14 +45,34 @@ Transform clean Silver data into an analytics-ready operational mart that answer
    - `is_delivered_on_time`: BOOLEAN — TRUE if `actual_delivery_at <= carrier_promised_delivery_at`; FALSE otherwise
 
 3. **One row per label**:
-   - DISTINCT on `label_id` after delivery event lookup
+   - Collapse delivery events to one per label in a CTE using `ROW_NUMBER() OVER (PARTITION BY label_id ORDER BY event_at DESC)` (keep `rn = 1`), then LEFT JOIN that to `silver.labels`
+   - **No `DISTINCT`** — duplication is prevented at the source by deduping the delivery events, not masked after a fan-out join
    - Preserve all dimension columns from `silver.labels`
    - All metrics are atomic (per-label), not aggregated
 
 4. **Data quality**:
    - If a label has no delivery event, `actual_delivery_at` is NULL, `is_delivered` = FALSE, `is_delivered_on_time` = FALSE (not delivered, so not on-time)
-   - If a label has multiple delivery-like events (shouldn't happen after Silver dedup, but defensive), use the **latest by `event_at`**
+   - If a label has multiple delivery-like events (shouldn't happen after Silver dedup, but defensive), the window function keeps the **latest by `event_at`**
    - Preserve all rows (never filter out incomplete shipments) — they're important for "% on-time" calculation
+
+---
+
+## Expected Metric Distribution
+
+The on-time rate is driven by the synthetic data generator, so the mart's output should fall in a predictable range:
+
+- **Late deliveries** are controlled by `late_delivery_proportion` in `config.yaml` (default **3%**). The generator places late shipments' `delivered` event at `carrier_promised_delivery_at + 6–48h`, so ~3% of *delivered* labels land after the promised date.
+- **Undelivered labels** (~10–12%): voided, incomplete (stuck before delivery), or never delivered → counted as not-on-time.
+
+Resulting ballpark (5,000 labels, default config):
+
+| Metric | Expected |
+|--------|----------|
+| Delivered | ~88–89% of labels |
+| On-time *of delivered* | ~96–97% |
+| **On-time overall** (vs. all labels) | **~85–86%** |
+
+This comfortably satisfies the case study's "80%+ of delivered shipments on-time" check, while still showing a visible late-delivery signal. A reading near **0% or 100% indicates a bug** (e.g. unparsed timestamps or a non-matching `event_name`), not a data artifact.
 
 ---
 
