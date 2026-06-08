@@ -185,13 +185,6 @@ No new dependencies beyond Bronze layer:
 
 ---
 
-## Estimated Effort
-
-- **Phase 1 (Notebook)**: 2-4 hours
-- **Phase 2 (dbt)**: 3-5 hours (if included)
-
----
-
 ## Deployment
 
 ### Phase 1:
