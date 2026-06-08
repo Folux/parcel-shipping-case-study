@@ -120,3 +120,54 @@ Features and improvements identified during development that are valuable but no
 **Priority:** Nice-to-have
 
 ---
+
+## Incremental Loads: Late-Arriving Events
+
+**Problem**:
+- Bronze layer currently assumes all data lands within a single batch
+- In production, tracking events arrive asynchronously (sometimes days late)
+- Example: A delivery event on 2026-06-06 might not land until 2026-06-09
+- Silver layer must handle re-runs that incorporate late-arriving events without duplicating downstream Gold
+
+**Current Approach (MVP)**:
+- Full idempotent overwrites: safe but wasteful for large tables
+- Late events are included naturally in the next run
+
+**Future Improvement**:
+- Incremental merge strategy using event_id as merge key
+- Track "data arrival date" in Silver (event_received_at vs event_at)
+- Implement SCD2 (Slowly Changing Dimensions) if needed to preserve history
+- Flag events arriving late (3+ days after promised delivery) for monitoring
+- Ensure Gold layer can re-aggregate correctly when Silver is updated with late events
+
+**Effort Level:** Medium
+**Priority:** Nice-to-have (full overwrites work for MVP; incremental needed at scale)
+
+---
+
+## Orphaned Tracking Events Table
+
+**Problem**:
+- During Silver layer transformation, some tracking events may have no matching label (broken foreign key)
+- Currently these orphaned events are silently dropped
+- No visibility into data quality issues from carriers or system errors
+
+**Current Approach (MVP)**:
+- Orphaned events dropped with logging
+
+**Future Improvement**:
+- Create `silver.tracking_events_orphaned` table
+- Capture all events where `label_id` doesn't exist in `silver.labels`
+- Include metadata: when orphan was detected, which labels are missing
+- Enables investigation: are labels delayed in Bronze? Is there a carrier issue? System bug?
+- Monitor orphan volume for data quality trending
+
+**Example Use Cases**:
+- Carrier sends tracking event for non-existent label → detect carrier error
+- Label creation delayed but events arrive first → detect Bronze pipeline delay
+- Data corruption → detect system issue early
+
+**Effort Level:** Low
+**Priority:** Nice-to-have (informational, aids debugging)
+
+---
