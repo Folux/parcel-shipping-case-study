@@ -8,11 +8,7 @@ model-paths: ["models"]
 
 models:
   skullport:
-    # Materialize everything as Delta tables (full refresh, idempotent). Future improvement incremental
+    # Materialize as Delta tables (full refresh; incremental is a future improvement)
     +materialized: table
-    silver:
-      # No +schema → uses the dbt task's target schema (silver)
-      +tags: ["silver"]
     gold:
-      +schema: gold
-      +tags: ["gold"]
+      +schema: gold   # silver models fall back to the task's target schema (silver)
