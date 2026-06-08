@@ -1,26 +1,23 @@
 # Databricks Asset Bundle — Skullport parcel pipeline
 #
 # SPIKE SCOPE: deploys a single Job that runs the dbt Silver models against a
-# serverless SQL warehouse, to prove the dbt-on-serverless path works on
-# Databricks Free Edition. It reads the existing skullport.raw.* tables and
-# writes to skullport.silver_dbt.* (a separate schema, so it does NOT clobber
-# the notebook-built skullport.silver.* tables).
+# SQL warehouse, to validate the dbt deployment path. It reads the existing
+# skullport.raw.* tables and writes to skullport.silver_dbt.* (a separate
+# schema, so it does NOT clobber the notebook-built skullport.silver.* tables).
 #
-# Deploy + run:
-#   databricks bundle validate -t dev
-#   databricks bundle deploy   -t dev
-#   databricks bundle run skullport_dbt_silver -t dev --var="warehouse_id=<your-warehouse-id>"
+# One-time setup: fill in `host` and `warehouse_id` under targets.dev below.
 #
-# Find <your-warehouse-id> under SQL Warehouses → your serverless warehouse →
-# Connection details (or the ID in its URL).
+# Deploy + run (single default target, no flags needed):
+#   databricks bundle validate
+#   databricks bundle deploy
+#   databricks bundle run skullport_dbt_silver
 
 bundle:
   name: skullport
 
 variables:
   warehouse_id:
-    description: Serverless SQL warehouse ID that dbt executes models against.
-    default: ""
+    description: SQL warehouse ID that dbt executes models against (set per target below).
 
 resources:
   jobs:
@@ -45,12 +42,15 @@ resources:
             dependencies:
               - "dbt-databricks>=1.8,<2.0"
 
+# A single, default target → `databricks bundle ...` needs no -t flag.
+# `mode: development` deploys to your personal /Users/<you>/ workspace folder,
+# so each person (you, a reviewer) gets an isolated deployment.
 targets:
   dev:
     mode: development
     default: true
     workspace:
-      # Either replace this with your Free Edition workspace URL, or run the
-      # CLI with a configured profile (databricks bundle deploy -t dev -p <profile>)
-      # and remove this line.
       host: https://YOUR-WORKSPACE.cloud.databricks.com
+    variables:
+      # The last segment of the warehouse's HTTP path: /sql/1.0/warehouses/<id>
+      warehouse_id: PUT-YOUR-WAREHOUSE-ID-HERE

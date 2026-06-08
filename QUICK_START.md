@@ -58,26 +58,34 @@ bundle's dbt task builds the connection from that (no local `profiles.yml`).
   HTTP path**:
 
   ```
-  HTTP path:  /sql/1.0/warehouses/0802df68998c49e2
+  HTTP path:  /sql/1.0/warehouses/0123456789abcde01
                                    ^^^^^^^^^^^^^^^^  ← this is your warehouse_id
   ```
 
   (Ignore Server hostname / JDBC URL / OAuth URL — those are for direct client
   connections, which this bundle does not use.)
 
-### 4. Point the bundle at your workspace
+### 4. Fill in the bundle (one-time)
 
-Edit `databricks.yml` → `targets.dev.workspace.host` to your workspace URL
-(or pass `-p <profile>` on the commands below and remove that line).
+Edit `databricks.yml` → `targets.dev` and set two values:
+
+```yaml
+targets:
+  dev:
+    workspace:
+      host: https://dbc-xxxx.cloud.databricks.com   # your workspace URL
+    variables:
+      warehouse_id: 0123456789abcdef                # the ID from step 3
+```
 
 ### 5. Deploy and run
 
-From the repo root:
+From the repo root — `dev` is the default target, so no flags are needed:
 
 ```bash
-databricks bundle validate -t dev
-databricks bundle deploy   -t dev
-databricks bundle run skullport_dbt_silver -t dev --var="warehouse_id=<your-warehouse-id>"
+databricks bundle validate
+databricks bundle deploy
+databricks bundle run skullport_dbt_silver
 ```
 
 ### 6. Verify
