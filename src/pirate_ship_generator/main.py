@@ -26,26 +26,26 @@ logger = logging.getLogger(__name__)
 
 def _resolve_catalog(spark, preferred: str) -> str:
     """
-    Return a usable Unity Catalog name.
+    Verify that the required Unity Catalog exists.
 
-    Prefers `preferred` (from config) if it exists in the workspace; otherwise
-    falls back to the session's current_catalog(), so the notebook works for
-    any reviewer regardless of whether a `workspace` catalog exists.
+    The case study requires the configured catalog (from config.yaml) to exist.
+    No fallback — explicit requirement for consistent table placement.
     """
     try:
         catalogs = [row[0] for row in spark.sql("SHOW CATALOGS").collect()]
-    except Exception:
-        catalogs = []
+    except Exception as e:
+        raise ValueError(
+            f"Failed to list catalogs: {e}. Ensure you're on a Unity Catalog workspace."
+        )
 
-    if preferred in catalogs:
-        return preferred
+    if preferred not in catalogs:
+        raise ValueError(
+            f"Required catalog '{preferred}' not found in this workspace. "
+            f"Available catalogs: {', '.join(catalogs)}. "
+            f"Create the '{preferred}' catalog or update config.yaml."
+        )
 
-    current = spark.sql("SELECT current_catalog()").collect()[0][0]
-    logger.warning(
-        f"Configured catalog '{preferred}' not found in this workspace; "
-        f"falling back to current catalog '{current}'."
-    )
-    return current
+    return preferred
 
 
 def main(config_path: str = "config.yaml", spark=None) -> dict:

@@ -27,6 +27,31 @@ logger = logging.getLogger(__name__)
 
 # COMMAND ----------
 
+# Verify Unity Catalog setup
+
+logger.info("=" * 70)
+logger.info("VERIFICATION: UNITY CATALOG SETUP")
+logger.info("=" * 70)
+
+try:
+    current_catalog = spark.sql("SELECT current_catalog()").collect()[0][0]
+    logger.info(f"Current catalog: {current_catalog}")
+
+    # Verify workspace catalog exists
+    catalogs = [row[0] for row in spark.sql("SHOW CATALOGS").collect()]
+    if "workspace" not in catalogs:
+        raise ValueError(
+            f"Required catalog 'workspace' not found. "
+            f"Available catalogs: {', '.join(catalogs)}"
+        )
+    logger.info("✓ Catalog 'workspace' verified")
+
+except Exception as e:
+    logger.error(f"❌ Catalog verification failed: {e}")
+    raise
+
+# COMMAND ----------
+
 # Step 0: Ensure silver schema exists
 
 logger.info("=" * 70)
