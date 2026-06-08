@@ -103,8 +103,16 @@ TIMEZONE_FORMAT = {
     "DHL_ECOM": "tz_abbr", # ISO 8601 with timezone abbreviation (e.g., 2026-06-06T10:30:00 EST)
 }
 
-# US timezone abbreviations for DHL events
-US_TIMEZONE_ABBRS = ["EST", "CST", "MST", "PST", "EDT", "CDT", "MDT", "PDT"]
+# US timezone abbreviations → UTC offset (hours) for DHL events.
+# The abbreviation itself encodes standard vs. daylight (e.g. EST=-5, EDT=-4),
+# so a fixed offset per abbreviation is correct and unambiguous.
+US_TIMEZONE_OFFSETS = {
+    "EST": -5, "EDT": -4,  # Eastern
+    "CST": -6, "CDT": -5,  # Central
+    "MST": -7, "MDT": -6,  # Mountain
+    "PST": -8, "PDT": -7,  # Pacific
+}
+US_TIMEZONE_ABBRS = list(US_TIMEZONE_OFFSETS.keys())
 
 
 def generate_events(labels_df: pd.DataFrame, config: dict) -> list[EventRow]:
@@ -389,8 +397,12 @@ def _format_event_at(event_at: datetime, carrier: str) -> str:
 
     elif format_type == "tz_abbr":
         # DHL_ECOM: ISO 8601 with timezone abbreviation (e.g., 2026-06-06T10:30:00 EST)
+        # Convert the UTC instant into the chosen zone so the wall-clock time
+        # actually matches the abbreviation (e.g. 15:30 UTC -> 11:30 EDT).
         tz_abbr = random.choice(US_TIMEZONE_ABBRS)
-        return event_at.strftime("%Y-%m-%dT%H:%M:%S") + f" {tz_abbr}"
+        offset_tz = timezone(timedelta(hours=US_TIMEZONE_OFFSETS[tz_abbr]))
+        localized = event_at.astimezone(offset_tz)
+        return localized.strftime("%Y-%m-%dT%H:%M:%S") + f" {tz_abbr}"
 
     else:
         # Default to plain format
