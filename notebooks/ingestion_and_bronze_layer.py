@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 
 import logging
 
-from pirate_ship_generator.main import main
+from ingestion_and_bronze_layer.main import main
 
 logging.basicConfig(
     level=logging.INFO,
