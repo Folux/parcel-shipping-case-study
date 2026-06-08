@@ -16,7 +16,7 @@ class TestLoadConfig:
         assert isinstance(config, GeneratorConfig)
         assert config.num_labels == 5000
         assert config.random_seed == 42
-        assert config.catalog_name == "pirate_ship_demo"
+        assert config.catalog_name == "skullport"
 
     def test_config_type_hints(self):
         """GeneratorConfig fields should have correct types."""

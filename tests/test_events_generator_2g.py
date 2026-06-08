@@ -69,8 +69,8 @@ class TestApplyVoidedLabelTracking:
         result = _apply_voided_label_tracking(events, labels_df, voided_tracking_proportion=1.0)
 
         # Should have original event + events for 2 voided labels (lbl_1, lbl_3)
-        # Each voided label gets 1-2 events, so at least 2 + 1-2 + 1-2 = 5-8 total
-        assert len(result) >= 4  # Original + at least 2 for each of 2 voided labels
+        # Each voided label gets 1-2 events, so minimum is 1 + 1 + 1 = 3 total
+        assert len(result) >= 3  # Original + at least 1 for each of 2 voided labels
 
     def test_events_only_for_voided_labels(self):
         """Events should only be added to voided labels, not active ones."""

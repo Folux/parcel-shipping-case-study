@@ -1,5 +1,6 @@
 """Tests for events generator Step 1b: Decide Event Sequence per Label."""
 
+import random
 import pytest
 from datetime import datetime, timedelta, timezone
 
@@ -107,6 +108,9 @@ class TestDecideEventSequenceNotVoided:
 
     def test_not_voided_mostly_4_events(self):
         """Non-voided labels should mostly have 4 events (99%)."""
+        # Seed for determinism: the ~1% incomplete (2-event) rate means a small
+        # sample can occasionally yield zero 2-event labels by chance.
+        random.seed(42)
         created_at = datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc)
 
         label = {

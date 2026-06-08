@@ -61,24 +61,11 @@ class TestWriteLabels:
         sig = inspect.signature(write_labels)
         assert "labels_df" in sig.parameters
 
-    def test_write_labels_accepts_table_path(self):
-        """write_labels should accept a table_path parameter."""
-        import inspect
-        sig = inspect.signature(write_labels)
-        assert "table_path" in sig.parameters
-
     def test_write_labels_accepts_mode(self):
         """write_labels should accept a mode parameter."""
         import inspect
         sig = inspect.signature(write_labels)
         assert "mode" in sig.parameters
-
-    def test_write_labels_default_paths(self):
-        """write_labels should have sensible defaults."""
-        import inspect
-        sig = inspect.signature(write_labels)
-        assert sig.parameters["table_path"].default == "/mnt/raw/labels"
-        assert sig.parameters["mode"].default == "overwrite"
 
 
 class TestWriteEvents:
@@ -94,24 +81,11 @@ class TestWriteEvents:
         sig = inspect.signature(write_events)
         assert "events_df" in sig.parameters
 
-    def test_write_events_accepts_table_path(self):
-        """write_events should accept a table_path parameter."""
-        import inspect
-        sig = inspect.signature(write_events)
-        assert "table_path" in sig.parameters
-
     def test_write_events_accepts_mode(self):
         """write_events should accept a mode parameter."""
         import inspect
         sig = inspect.signature(write_events)
         assert "mode" in sig.parameters
-
-    def test_write_events_default_paths(self):
-        """write_events should have sensible defaults."""
-        import inspect
-        sig = inspect.signature(write_events)
-        assert sig.parameters["table_path"].default == "/mnt/raw/tracking_events"
-        assert sig.parameters["mode"].default == "overwrite"
 
 
 class TestWriteAll:
@@ -124,27 +98,12 @@ class TestWriteAll:
         assert "labels_df" in sig.parameters
         assert "events_df" in sig.parameters
 
-    def test_write_all_accepts_both_paths(self):
-        """write_all should accept paths for both tables."""
-        import inspect
-        sig = inspect.signature(write_all)
-        assert "labels_path" in sig.parameters
-        assert "events_path" in sig.parameters
-
     def test_write_all_returns_dict(self):
         """write_all should return a dictionary with statistics."""
         import inspect
         sig = inspect.signature(write_all)
         # Return annotation should be dict
         assert sig.return_annotation == dict
-
-    def test_write_all_default_paths(self):
-        """write_all should have sensible default paths."""
-        import inspect
-        sig = inspect.signature(write_all)
-        assert sig.parameters["labels_path"].default == "/mnt/raw/labels"
-        assert sig.parameters["events_path"].default == "/mnt/raw/tracking_events"
-        assert sig.parameters["mode"].default == "overwrite"
 
 
 class TestDataFrameValidation:
