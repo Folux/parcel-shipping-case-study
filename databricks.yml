@@ -1,9 +1,9 @@
 # Databricks Asset Bundle — Skullport parcel pipeline
 #
 # Deploys a single Job that runs the dbt Silver + Gold models against a SQL
-# warehouse. It reads the existing skullport.raw.* tables and writes to
-# skullport.silver_dbt.* and skullport.gold_dbt.* (separate schemas, so it does
-# NOT clobber the notebook-built skullport.silver.* / skullport.gold.* tables).
+# warehouse. dbt is the production transformation layer: it reads the
+# skullport.raw.* tables (Bronze) and builds skullport.silver.* and
+# skullport.gold.* (with tests).
 #
 # Setup: authenticate once — the workspace host is read from this profile, so
 # no workspace URL is committed to the repo:
@@ -34,7 +34,7 @@ resources:
           dbt_task:
             project_directory: dbt
             catalog: skullport
-            schema: silver_dbt
+            schema: silver
             warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt build"

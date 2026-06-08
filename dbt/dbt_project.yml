@@ -11,8 +11,8 @@ models:
     # Materialize everything as Delta tables (full refresh, idempotent). Future improvement incremental
     +materialized: table
     silver:
-      # No +schema → uses the dbt task's target schema (silver_dbt)
+      # No +schema → uses the dbt task's target schema (silver)
       +tags: ["silver"]
     gold:
-      +schema: gold_dbt
+      +schema: gold
       +tags: ["gold"]

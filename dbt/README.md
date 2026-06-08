@@ -5,15 +5,15 @@ deployed via a Databricks Asset Bundle.
 
 ## What it does
 
-- Reads the existing Bronze tables `skullport.raw.{labels,tracking_events}`
-- Builds the Silver models into **`skullport.silver_dbt`** (separate schema, so
-  it does not touch the notebook-built `skullport.silver.*`):
+- Reads the Bronze tables `skullport.raw.{labels,tracking_events}`
+- Builds the Silver models into **`skullport.silver`**:
   - `labels` — CDC collapse + quality/fraud flags
   - `tracking_events` — dedup, canonical `event_name`, UTC-normalized `event_at`
-- Builds the Gold model into **`skullport.gold_dbt`**:
+- Builds the Gold model into **`skullport.gold`**:
   - `delivery_performance` — one row per label with the on-time metric
 - Runs generic tests (`unique`, `not_null`, `relationships`, `accepted_values`)
 
+dbt is the production transformation layer that owns Silver and Gold.
 Models and tests run together via `dbt build`.
 
 ## How it runs (no local cluster needed)
@@ -35,7 +35,7 @@ databricks bundle run skullport_dbt_build
 dbt/
 ├── dbt_project.yml
 ├── macros/
-│   └── generate_schema_name.sql   # absolute schema names (silver_dbt / gold_dbt)
+│   └── generate_schema_name.sql   # absolute schema names (silver / gold)
 └── models/
     ├── silver/
     │   ├── _silver__sources.yml   # skullport.raw source
@@ -49,6 +49,6 @@ dbt/
 
 ## Schema routing
 
-The bundle's dbt task sets the target schema to `silver_dbt`. The `gold` folder
-overrides `+schema: gold_dbt` in `dbt_project.yml`, and the
-`generate_schema_name` macro makes that an absolute name (not `silver_dbt_gold_dbt`).
+The bundle's dbt task sets the target schema to `silver`. The `gold` folder
+overrides `+schema: gold` in `dbt_project.yml`, and the
+`generate_schema_name` macro makes that an absolute name (not `silver_gold`).
