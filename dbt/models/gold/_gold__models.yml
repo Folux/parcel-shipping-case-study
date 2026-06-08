@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: delivery_performance
+    description: Operational mart — one row per label with the on-time delivery metric.
+    columns:
+      - name: label_id
+        description: Primary key (one row per label).
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('labels')
+              field: label_id
+      - name: is_delivered_on_time
+        description: True if the label was delivered on or before the promised date.
+        data_tests:
+          - not_null

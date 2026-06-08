@@ -1,16 +1,17 @@
-# Skullport dbt (Silver layer — spike)
+# Skullport dbt (Silver + Gold)
 
-Minimal dbt project that builds the **Silver** layer on Databricks. This is a
-spike to validate the dbt-on-serverless deployment path via Databricks Asset
-Bundles before porting the full pipeline.
+dbt project that builds the **Silver** and **Gold** layers on Databricks,
+deployed via a Databricks Asset Bundle.
 
 ## What it does
 
 - Reads the existing Bronze tables `skullport.raw.{labels,tracking_events}`
-- Builds two models into **`skullport.silver_dbt`** (separate schema, so it does
-  not touch the notebook-built `skullport.silver.*`):
+- Builds the Silver models into **`skullport.silver_dbt`** (separate schema, so
+  it does not touch the notebook-built `skullport.silver.*`):
   - `labels` — CDC collapse + quality/fraud flags
   - `tracking_events` — dedup, canonical `event_name`, UTC-normalized `event_at`
+- Builds the Gold model into **`skullport.gold_dbt`**:
+  - `delivery_performance` — one row per label with the on-time metric
 - Runs generic tests (`unique`, `not_null`, `relationships`, `accepted_values`)
 
 Models and tests run together via `dbt build`.
@@ -18,31 +19,36 @@ Models and tests run together via `dbt build`.
 ## How it runs (no local cluster needed)
 
 dbt does **not** run locally. It runs as a **dbt task in a Databricks Job**
-(serverless), executing models against a serverless SQL warehouse. Databricks
-auto-generates the connection profile from the warehouse — no credentials in
-this repo.
+(serverless), executing models against a SQL warehouse. The connection profile
+is generated from the warehouse — no credentials in this repo.
 
-From the repo root:
+From the repo root (see the top-level `QUICK_START.md` for full setup):
 
 ```bash
-databricks bundle validate -t dev
-databricks bundle deploy   -t dev
-databricks bundle run skullport_dbt_silver -t dev --var="warehouse_id=<warehouse-id>"
+databricks bundle deploy --var="warehouse_id=<warehouse-id>"
+databricks bundle run skullport_dbt_silver
 ```
-
-`<warehouse-id>`: SQL Warehouses → your serverless warehouse → Connection details.
-
-> Edit `databricks.yml` → `targets.dev.workspace.host` to your Free Edition URL,
-> or deploy with a configured CLI profile (`-p <profile>`).
 
 ## Layout
 
 ```
 dbt/
 ├── dbt_project.yml
-└── models/silver/
-    ├── _silver__sources.yml   # skullport.raw source
-    ├── _silver__models.yml    # tests
-    ├── labels.sql
-    └── tracking_events.sql
+├── macros/
+│   └── generate_schema_name.sql   # absolute schema names (silver_dbt / gold_dbt)
+└── models/
+    ├── silver/
+    │   ├── _silver__sources.yml   # skullport.raw source
+    │   ├── _silver__models.yml    # tests
+    │   ├── labels.sql
+    │   └── tracking_events.sql
+    └── gold/
+        ├── _gold__models.yml      # tests
+        └── delivery_performance.sql
 ```
+
+## Schema routing
+
+The bundle's dbt task sets the target schema to `silver_dbt`. The `gold` folder
+overrides `+schema: gold_dbt` in `dbt_project.yml`, and the
+`generate_schema_name` macro makes that an absolute name (not `silver_dbt_gold_dbt`).

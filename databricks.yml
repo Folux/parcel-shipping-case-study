@@ -1,9 +1,9 @@
 # Databricks Asset Bundle — Skullport parcel pipeline
 #
-# SPIKE SCOPE: deploys a single Job that runs the dbt Silver models against a
-# SQL warehouse, to validate the dbt deployment path. It reads the existing
-# skullport.raw.* tables and writes to skullport.silver_dbt.* (a separate
-# schema, so it does NOT clobber the notebook-built skullport.silver.* tables).
+# Deploys a single Job that runs the dbt Silver + Gold models against a SQL
+# warehouse. It reads the existing skullport.raw.* tables and writes to
+# skullport.silver_dbt.* and skullport.gold_dbt.* (separate schemas, so it does
+# NOT clobber the notebook-built skullport.silver.* / skullport.gold.* tables).
 #
 # Setup: authenticate once — the workspace host is read from this profile, so
 # no workspace URL is committed to the repo:
@@ -37,7 +37,7 @@ resources:
             schema: silver_dbt
             warehouse_id: ${var.warehouse_id}
             commands:
-              - "dbt build --select silver"
+              - "dbt build"
       # Serverless compute that runs the dbt CLI itself (the SQL runs on the
       # warehouse above). dbt-databricks is installed into this environment.
       environments:
