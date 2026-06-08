@@ -4,7 +4,7 @@ import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from pirate_ship_generator.schemas import (
+from skullport_generator.schemas import (
     RAW_LABELS_SCHEMA,
     RAW_TRACKING_EVENTS_SCHEMA,
 )

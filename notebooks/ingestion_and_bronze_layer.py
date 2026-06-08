@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 
 import logging
 
-from ingestion_and_bronze_layer.main import main
+from skullport_generator.main import main
 
 logging.basicConfig(
     level=logging.INFO,

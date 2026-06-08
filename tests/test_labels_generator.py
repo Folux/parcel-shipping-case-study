@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 from datetime import datetime
 
-from pirate_ship_generator.labels_generator import (
+from skullport_generator.labels_generator import (
     _generate_label_id,
     _generate_customer_id,
     _select_carrier,
@@ -16,7 +16,7 @@ from pirate_ship_generator.labels_generator import (
     generate_base_labels,
     apply_cdc_changes,
 )
-from pirate_ship_generator.config import load_config
+from skullport_generator.config import load_config
 
 
 class TestIDGeneration:

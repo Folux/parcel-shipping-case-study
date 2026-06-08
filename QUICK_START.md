@@ -6,7 +6,7 @@
 - Click **New** → **Git folder**
 - Paste repo URL: `https://github.com/Folux/parcel-shipping-case-study.git`
 - Click **Clone**
-- From your Workspace home navigate to: `parcel-shipping-case-study/notebooks/pirate_ship_generator.py`
+- From your Workspace home navigate to: `parcel-shipping-case-study/notebooks/skullport_generator.py`
 - Click **Run all**
 - Wait 5-10 minutes for completion
 - Check Databricks Catalog:

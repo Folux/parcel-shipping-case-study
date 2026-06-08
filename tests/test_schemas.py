@@ -4,7 +4,7 @@ import pytest
 
 from pyspark.sql.types import StringType, IntegerType, TimestampType, StructType
 
-from pirate_ship_generator.schemas import (
+from skullport_generator.schemas import (
     RAW_LABELS_SCHEMA,
     RAW_TRACKING_EVENTS_SCHEMA,
 )

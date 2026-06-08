@@ -13,5 +13,5 @@ pytest tests/
 ## Usage
 
 ```bash
-python -m pirate_ship_generator.main config.yaml
+python -m skullport_generator.main config.yaml
 ```

@@ -1,1 +1,1 @@
-"""Tests for pirate_ship_generator."""
+"""Tests for skullport_generator."""

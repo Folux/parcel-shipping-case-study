@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime, timezone
 
-from pirate_ship_generator.events_generator import (
+from skullport_generator.events_generator import (
     _format_event_at,
     TIMEZONE_FORMAT,
     US_TIMEZONE_ABBRS,

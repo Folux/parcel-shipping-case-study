@@ -7,13 +7,13 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 
-from pirate_ship_generator.config import load_config
-from pirate_ship_generator.labels_generator import (
+from skullport_generator.config import load_config
+from skullport_generator.labels_generator import (
     generate_base_labels,
     apply_cdc_changes,
 )
-from pirate_ship_generator.events_generator import generate_events
-from pirate_ship_generator.writer import write_all, validate_written_data
+from skullport_generator.events_generator import generate_events
+from skullport_generator.writer import write_all, validate_written_data
 
 
 # Set up logging
@@ -116,7 +116,7 @@ def main(config_path: str = "config.yaml", spark=None) -> dict:
                 # Local / non-Databricks only (e.g. pytest): safe to create one
                 logger.info("No active session found — creating one (local mode)")
                 spark = SparkSession.builder \
-                    .appName("pirate-ship-generator") \
+                    .appName("skullport-generator") \
                     .config("spark.sql.adaptive.enabled", "true") \
                     .getOrCreate()
                 logger.info("✓ SparkSession created")

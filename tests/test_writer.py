@@ -6,7 +6,7 @@ import tempfile
 import shutil
 from datetime import datetime, timezone
 
-from pirate_ship_generator.writer import (
+from skullport_generator.writer import (
     write_labels,
     write_events,
     write_all,
@@ -228,7 +228,7 @@ class TestSchemaCompatibility:
 
     def test_labels_df_matches_schema_structure(self):
         """Test labels DataFrame matches RAW_LABELS_SCHEMA structure."""
-        from pirate_ship_generator.schemas import RAW_LABELS_SCHEMA
+        from skullport_generator.schemas import RAW_LABELS_SCHEMA
 
         df = _create_test_labels_df()
         schema_fields = [f.name for f in RAW_LABELS_SCHEMA.fields]
@@ -239,7 +239,7 @@ class TestSchemaCompatibility:
 
     def test_events_df_matches_schema_structure(self):
         """Test events DataFrame matches RAW_TRACKING_EVENTS_SCHEMA structure."""
-        from pirate_ship_generator.schemas import RAW_TRACKING_EVENTS_SCHEMA
+        from skullport_generator.schemas import RAW_TRACKING_EVENTS_SCHEMA
 
         df = _create_test_events_df()
         schema_fields = [f.name for f in RAW_TRACKING_EVENTS_SCHEMA.fields]

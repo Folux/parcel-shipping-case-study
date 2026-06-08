@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 
-from pirate_ship_generator.events_generator import (
+from skullport_generator.events_generator import (
     _get_tracking_events,
     EVENT_SEQUENCE,
     EVENT_SEQUENCE_RULES,

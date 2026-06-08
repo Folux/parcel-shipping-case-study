@@ -4,7 +4,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from pirate_ship_generator.config import load_config, GeneratorConfig
+from skullport_generator.config import load_config, GeneratorConfig
 
 
 class TestLoadConfig:

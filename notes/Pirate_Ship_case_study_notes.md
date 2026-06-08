@@ -47,7 +47,7 @@
 
 ### ✅ 2026-06-07 (Session Continued) - Phase 3a: Step 1 - Base Labels Generator (Complete)
 - **Implementation**:
-  - Created `src/pirate_ship_generator/labels_generator.py` with entry function `generate_base_labels(config)` at top
+  - Created `src/skullport_generator/labels_generator.py` with entry function `generate_base_labels(config)` at top
   - Implemented 8 private helper functions (prefixed with `_`):
     - `_generate_label_id()` → lbl_<24 hex>
     - `_generate_customer_id()` → cust_<12 hex>
@@ -240,7 +240,7 @@
 ---
 
 ### ✅ 2026-06-07 (Earlier) - Events Generator Step 1a: Helper Functions & Constants
-- **Created**: `src/pirate_ship_generator/events_generator.py`
+- **Created**: `src/skullport_generator/events_generator.py`
 - **Constants** (public):
   - `EVENT_CODES` dict: All 4 carriers with codes/types (USPS "0300", UPS "PICKUP", etc.)
   - `EVENT_TIMING` dict: SLA proportions (15%, 40%, 75%, 95%)
@@ -287,7 +287,7 @@
   - Result: Clean, semantically correct, avoids duplicate/inconsistent adjustments per row
 
 - **Updated**:
-  - ✅ `src/pirate_ship_generator/labels_generator.py` — weight fraud + insurance edge cases in generate_base_labels()
+  - ✅ `src/skullport_generator/labels_generator.py` — weight fraud + insurance edge cases in generate_base_labels()
   - ✅ `tests/test_labels_generator.py` — 4 new data quality tests (now 34 tests passing)
   - ✅ `planning/specs/SPEC_4a_Data_Generator.md` — spec aligned with new approach
   - ✅ `planning/implementation/IMPL_4a_Data_Generator.md` — implementation steps updated
@@ -309,7 +309,7 @@
   - All 15 tests passing
 
 **Module 5: Writer** ✅
-- ✅ Created `src/pirate_ship_generator/writer.py` with 4 public functions:
+- ✅ Created `src/skullport_generator/writer.py` with 4 public functions:
   - `write_labels(spark, labels_df, table_path, mode)` → writes raw.labels Delta table
   - `write_events(spark, events_df, table_path, mode)` → writes raw.tracking_events Delta table
   - `write_all(spark, labels_df, events_df, labels_path, events_path, mode)` → writes both tables
@@ -325,7 +325,7 @@
   - TestHelperDataFrames: 6 tests (helper function correctness)
 
 **Module 6: Main (Orchestration)** ✅
-- ✅ Created `src/pirate_ship_generator/main.py` with main orchestration function
+- ✅ Created `src/skullport_generator/main.py` with main orchestration function
   - Entry point: `main(config_path="config.yaml")`
   - Workflow:
     1. Load config from YAML
@@ -350,7 +350,7 @@
   - TestMainLogging: 2 tests (uses logging, logs major steps)
 
 **Module 7: Notebook (Databricks Wrapper)** ✅
-- ✅ Created `notebooks/pirate_ship_generator.py` — Databricks notebook wrapper
+- ✅ Created `notebooks/skullport_generator.py` — Databricks notebook wrapper
   - Comprehensive orchestration notebook for cloud execution
   - Features:
     - Configurable widgets for paths (config, labels, events)
@@ -492,7 +492,7 @@
 - ✅ Module 4: Events Generator (`events_generator.py`) - Tracking event generation with data quality (95 tests)
 - ✅ Module 5: Writer (`writer.py`) - Delta table writing and validation (30 tests)
 - ✅ Module 6: Main (`main.py`) - Full orchestration pipeline (28 tests)
-- ✅ Module 7: Notebook (`notebooks/pirate_ship_generator.py`) - Databricks wrapper (27 tests)
+- ✅ Module 7: Notebook (`notebooks/skullport_generator.py`) - Databricks wrapper (27 tests)
 
 **Test Coverage**: 230 total passing tests
 - Labels Generator: 35 tests
@@ -523,7 +523,7 @@
 
 ### ✅ 2026-06-07 (Session 4 - Databricks Deployment & Bug Fixes) - PRODUCTION DEPLOYMENT COMPLETE
 
-**Objective**: Deploy the pirate_ship_generator to Databricks serverless and resolve deployment issues.
+**Objective**: Deploy the skullport_generator to Databricks serverless and resolve deployment issues.
 
 **Major Challenges & Solutions**:
 
@@ -584,7 +584,7 @@
 
 **Final Notebook Workflow** (6 cells):
 1. Setup: Add `../src` to Python path
-2. Imports: Load pirate_ship_generator module
+2. Imports: Load skullport_generator module
 3. Widget: Config file path input
 4. Run: Execute `main(config_path, spark=spark)` and print summary
 5. Verify: Read generated tables and display samples
@@ -695,7 +695,7 @@ All 7 modules have been implemented and tested:
    - Orchestration script combining all generators
    - Configuration-driven from config.yaml
    - Comprehensive logging and error handling
-   - Runnable as: `python -m pirate_ship_generator.main config.yaml`
+   - Runnable as: `python -m skullport_generator.main config.yaml`
 
 6. ✅ **Module 7: Notebook** (27 tests)
    - Databricks notebook wrapper for cloud execution

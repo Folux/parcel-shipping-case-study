@@ -5,7 +5,7 @@ import tempfile
 import sys
 from pathlib import Path
 
-from pirate_ship_generator.main import main
+from skullport_generator.main import main
 
 
 class TestMainFunction:
@@ -100,7 +100,7 @@ class TestMainImports:
 
     def test_imports_spark_session(self):
         """main should import SparkSession."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         # Check module has SparkSession imported
         import inspect
         source = inspect.getsource(main_module)
@@ -108,7 +108,7 @@ class TestMainImports:
 
     def test_imports_label_generator(self):
         """main should import label generation functions."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "generate_base_labels" in source
@@ -116,14 +116,14 @@ class TestMainImports:
 
     def test_imports_events_generator(self):
         """main should import event generation function."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "generate_events" in source
 
     def test_imports_writer(self):
         """main should import writer functions."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "write_all" in source
@@ -135,21 +135,21 @@ class TestMainWorkflow:
 
     def test_main_loads_config(self):
         """main should load config."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "load_config" in source
 
     def test_main_creates_spark_session(self):
         """main should create SparkSession."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "SparkSession.builder" in source
 
     def test_main_calls_label_generation(self):
         """main should call label generation functions."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "generate_base_labels" in source
@@ -157,28 +157,28 @@ class TestMainWorkflow:
 
     def test_main_calls_event_generation(self):
         """main should call event generation."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "generate_events" in source
 
     def test_main_converts_to_dataframe(self):
         """main should convert events list to DataFrame."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "pd.DataFrame" in source
 
     def test_main_writes_data(self):
         """main should write data to Delta tables."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "write_all" in source
 
     def test_main_validates_data(self):
         """main should validate written data."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "validate_written_data" in source
@@ -189,21 +189,21 @@ class TestMainCommandLine:
 
     def test_main_is_executable(self):
         """main.py should be executable as __main__."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert 'if __name__ == "__main__"' in source
 
     def test_main_accepts_command_line_config(self):
         """main should accept config path from command line."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "sys.argv" in source
 
     def test_main_has_default_command_line_config(self):
         """main should default to config.yaml from command line."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "config.yaml" in source
@@ -214,7 +214,7 @@ class TestMainLogging:
 
     def test_main_uses_logging(self):
         """main should use logging module."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         assert "logging" in source
@@ -222,7 +222,7 @@ class TestMainLogging:
 
     def test_main_logs_generation_steps(self):
         """main should log each major step."""
-        from pirate_ship_generator import main as main_module
+        from skullport_generator import main as main_module
         import inspect
         source = inspect.getsource(main_module)
         # Check for step logging

@@ -27,7 +27,7 @@ Build a production-grade data pipeline in Databricks that transforms synthetic d
 - Clone repo into workspace
 
 **Step 5: Run Generator Notebook**
-- Open `notebooks/pirate_ship_generator.py` in Databricks
+- Open `notebooks/skullport_generator.py` in Databricks
 - Click "Run all"
 - Wait for completion
 

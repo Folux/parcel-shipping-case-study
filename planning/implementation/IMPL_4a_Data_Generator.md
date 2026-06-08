@@ -12,14 +12,14 @@ Build a production-grade Python project that generates synthetic data for `raw.l
 ## Project Structure
 
 ```
-pirate-ship-generator/
+skullport-generator/
 ├── pyproject.toml                 # Project metadata, dependencies (Poetry)
 ├── poetry.lock                    # Locked dependency versions (committed to git)
 ├── .gitignore                     # Git ignore rules
 ├── README.md                      # Installation, usage, configuration guide
 ├── config.yaml                    # Example generator configuration
 ├── src/
-│   └── pirate_ship_generator/
+│   └── skullport_generator/
 │       ├── __init__.py
 │       ├── config.py              # Configuration loading & validation (Pydantic)
 │       ├── schemas.py             # PySpark StructType definitions
@@ -83,7 +83,7 @@ Databricks Runtime 16.4 LTS
 
 ```toml
 [tool.poetry]
-name = "pirate-ship-generator"
+name = "skullport-generator"
 version = "0.1.0"
 description = "Synthetic data generator for Delivery Performance Mart"
 authors = ["Your Name <you@example.com>"]
@@ -137,7 +137,7 @@ poetry lock         # Update poetry.lock
 
 ## Module Breakdown & Dependencies
 
-### Module 1: Configuration (`src/pirate_ship_generator/config.py`)
+### Module 1: Configuration (`src/skullport_generator/config.py`)
 **Purpose**: Load YAML config and return as a dictionary
 
 **Inputs**: YAML file (e.g., `config.yaml`)
@@ -153,7 +153,7 @@ poetry lock         # Update poetry.lock
 
 **Example usage**:
 ```python
-from pirate_ship_generator.config import load_config
+from skullport_generator.config import load_config
 
 config = load_config("config.yaml")
 # Returns: dict with num_labels, random_seed, carrier_distribution, etc.
@@ -163,7 +163,7 @@ random_seed = config["random_seed"]
 
 ---
 
-### Module 2: Schemas (`src/pirate_ship_generator/schemas.py`)
+### Module 2: Schemas (`src/skullport_generator/schemas.py`)
 **Purpose**: Define PySpark StructTypes for both Delta tables (schema as code)
 
 **Inputs**: None (static definitions)
@@ -191,7 +191,7 @@ RAW_LABELS_SCHEMA = StructType([
 
 ---
 
-### Module 3: Labels Generator (`src/pirate_ship_generator/labels_generator.py`)
+### Module 3: Labels Generator (`src/skullport_generator/labels_generator.py`)
 **Purpose**: Generate synthetic `raw.labels` data with CDC structure, changes, voiding, fraud, etc.
 
 **Inputs**: `GeneratorConfig`, random seed
@@ -248,7 +248,7 @@ RAW_LABELS_SCHEMA = StructType([
 
 ---
 
-### Module 4: Events Generator (`src/pirate_ship_generator/events_generator.py`)
+### Module 4: Events Generator (`src/skullport_generator/events_generator.py`)
 **Purpose**: Generate synthetic `raw.tracking_events` data with duplicates, late arrivals, malformed timestamps, schema drift, timezone weirdness, etc.
 
 **Inputs**: `GeneratorConfig`, labels Pandas DataFrame, random seed
@@ -331,7 +331,7 @@ RAW_LABELS_SCHEMA = StructType([
 
 ---
 
-### Module 5: Writer (`src/pirate_ship_generator/writer.py`)
+### Module 5: Writer (`src/skullport_generator/writer.py`)
 **Purpose**: Write DataFrames to Delta tables in Databricks Unity Catalog
 
 **Inputs**: Two Pandas/PySpark DataFrames, `GeneratorConfig`
@@ -387,7 +387,7 @@ def write_to_delta(labels_df, events_df, config: GeneratorConfig, spark):
 
 ---
 
-### Module 6: Main Entrypoint (`src/pirate_ship_generator/main.py`)
+### Module 6: Main Entrypoint (`src/skullport_generator/main.py`)
 **Purpose**: Orchestrate the generator: load config, generate data, write to Delta
 
 **Inputs**: Config file path (e.g., `config.yaml`)
@@ -416,7 +416,7 @@ def main(config_path: str):
     config = load_config(config_path)
     
     # Get Spark session
-    spark = SparkSession.builder.appName("pirate-ship-generator").getOrCreate()
+    spark = SparkSession.builder.appName("skullport-generator").getOrCreate()
     
     # Validate schemas
     validate_schemas()
@@ -452,9 +452,9 @@ if __name__ == "__main__":
 **Implementation**:
 ```python
 # Notebook: notebooks/run_generator.py
-%pip install -e /Workspace/Repos/your-username/pirate-ship-generator
+%pip install -e /Workspace/Repos/your-username/skullport-generator
 
-from pirate_ship_generator.main import main
+from skullport_generator.main import main
 
 # Run generator
 main("config.yaml")

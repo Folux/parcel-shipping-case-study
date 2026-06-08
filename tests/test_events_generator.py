@@ -1,7 +1,7 @@
 """Tests for events generator helpers and constants (Step 1a)."""
 
 import pytest
-from pirate_ship_generator.events_generator import (
+from skullport_generator.events_generator import (
     _generate_event_id,
     _get_event_code_and_type,
     _get_event_sla_proportion,

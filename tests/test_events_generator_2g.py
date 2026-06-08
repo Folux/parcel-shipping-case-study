@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime, timezone, timedelta
 
-from pirate_ship_generator.events_generator import (
+from skullport_generator.events_generator import (
     _apply_voided_label_tracking,
     EventRow,
 )
