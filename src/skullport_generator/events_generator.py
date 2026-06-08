@@ -93,6 +93,10 @@ EVENT_SEQUENCE_RULES = {
 EVENT_GENERATION = {
     "timestamp_randomness_hours": 2,  # ± hours of randomness in event timing
     "location_zip_null_proportion": 0.20,  # 20% of events have NULL location_zip
+    # Late deliveries land AFTER the promised date by this many hours (anchored
+    # to carrier_promised_delivery_at, so they are reliably late regardless of SLA length)
+    "late_delivery_min_hours": 6,
+    "late_delivery_max_hours": 48,
 }
 
 # Domain logic: Timezone formatting per carrier
@@ -149,29 +153,47 @@ def generate_events(labels_df: pd.DataFrame, config: dict) -> list[EventRow]:
         # Decide event sequence for this label
         tracking_event_sequence = _get_tracking_events(label_dict)
 
+        # Decide once whether this label's delivery lands late (only meaningful
+        # if it actually delivers). ~late_delivery_proportion of delivered
+        # shipments arrive after the carrier's promised date.
+        deliver_late = (
+            "delivered" in tracking_event_sequence["sequence"]
+            and random.random() < config.late_delivery_proportion
+        )
+
         # Generate events for this label
         label_events: list[EventRow] = []
 
         # Generate each tracking event in the sequence
         for event_name in tracking_event_sequence["sequence"]:
-            # Calculate event timestamp based on SLA proportion
-            sla_proportion = _get_event_sla_proportion(event_name)
-            sla_days = (
-                label_dict["carrier_promised_delivery_at"]
-                - label_dict["label_created_at"]
-            ).days
+            if event_name == "delivered" and deliver_late:
+                # Late delivery: land AFTER the promised date by a robust margin,
+                # independent of SLA length (so short-SLA shipments are late too).
+                event_at = label_dict["carrier_promised_delivery_at"] + timedelta(
+                    hours=random.randint(
+                        EVENT_GENERATION["late_delivery_min_hours"],
+                        EVENT_GENERATION["late_delivery_max_hours"],
+                    )
+                )
+            else:
+                # Normal: timestamp as a proportion of the SLA window + jitter
+                sla_proportion = _get_event_sla_proportion(event_name)
+                sla_days = (
+                    label_dict["carrier_promised_delivery_at"]
+                    - label_dict["label_created_at"]
+                ).days
 
-            # Base timestamp: label_created_at + (proportion * SLA)
-            event_at = label_dict["label_created_at"] + timedelta(
-                days=sla_proportion * sla_days
-            )
+                # Base timestamp: label_created_at + (proportion * SLA)
+                event_at = label_dict["label_created_at"] + timedelta(
+                    days=sla_proportion * sla_days
+                )
 
-            # Add randomness (± 2 hours)
-            randomness_hours = random.randint(
-                -EVENT_GENERATION["timestamp_randomness_hours"],
-                EVENT_GENERATION["timestamp_randomness_hours"],
-            )
-            event_at = event_at + timedelta(hours=randomness_hours)
+                # Add randomness (± 2 hours)
+                randomness_hours = random.randint(
+                    -EVENT_GENERATION["timestamp_randomness_hours"],
+                    EVENT_GENERATION["timestamp_randomness_hours"],
+                )
+                event_at = event_at + timedelta(hours=randomness_hours)
 
             # Get event code/type based on carrier
             event_code, event_type = _get_event_code_and_type(
