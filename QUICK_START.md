@@ -50,11 +50,20 @@ Follow the browser prompt. This stores a profile the CLI reuses.
 
 ### 3. Configure a SQL warehouse
 
-dbt executes its models against a SQL warehouse.
+dbt executes its models against a SQL warehouse. You only need its **ID** — the
+bundle's dbt task builds the connection from that (no local `profiles.yml`).
 
 - In Databricks: **SQL** → **SQL Warehouses** → use an existing warehouse or **Create**.
-- Start it, then open it → **Connection details** and copy the **warehouse ID**
-  (also visible in the warehouse URL).
+- Open it → **Connection details**. The **warehouse ID is the last segment of the
+  HTTP path**:
+
+  ```
+  HTTP path:  /sql/1.0/warehouses/0802df68998c49e2
+                                   ^^^^^^^^^^^^^^^^  ← this is your warehouse_id
+  ```
+
+  (Ignore Server hostname / JDBC URL / OAuth URL — those are for direct client
+  connections, which this bundle does not use.)
 
 ### 4. Point the bundle at your workspace
 
