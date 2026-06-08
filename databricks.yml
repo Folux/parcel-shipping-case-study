@@ -1,0 +1,56 @@
+# Databricks Asset Bundle — Skullport parcel pipeline
+#
+# SPIKE SCOPE: deploys a single Job that runs the dbt Silver models against a
+# serverless SQL warehouse, to prove the dbt-on-serverless path works on
+# Databricks Free Edition. It reads the existing skullport.raw.* tables and
+# writes to skullport.silver_dbt.* (a separate schema, so it does NOT clobber
+# the notebook-built skullport.silver.* tables).
+#
+# Deploy + run:
+#   databricks bundle validate -t dev
+#   databricks bundle deploy   -t dev
+#   databricks bundle run skullport_dbt_silver -t dev --var="warehouse_id=<your-warehouse-id>"
+#
+# Find <your-warehouse-id> under SQL Warehouses → your serverless warehouse →
+# Connection details (or the ID in its URL).
+
+bundle:
+  name: skullport
+
+variables:
+  warehouse_id:
+    description: Serverless SQL warehouse ID that dbt executes models against.
+    default: ""
+
+resources:
+  jobs:
+    skullport_dbt_silver:
+      name: skullport_dbt_silver
+      tasks:
+        - task_key: dbt_silver
+          environment_key: dbt_env
+          dbt_task:
+            project_directory: dbt
+            catalog: skullport
+            schema: silver_dbt
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt build --select silver"
+      # Serverless compute that runs the dbt CLI itself (the SQL runs on the
+      # warehouse above). dbt-databricks is installed into this environment.
+      environments:
+        - environment_key: dbt_env
+          spec:
+            client: "1"
+            dependencies:
+              - "dbt-databricks>=1.8,<2.0"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      # Either replace this with your Free Edition workspace URL, or run the
+      # CLI with a configured profile (databricks bundle deploy -t dev -p <profile>)
+      # and remove this line.
+      host: https://YOUR-WORKSPACE.cloud.databricks.com

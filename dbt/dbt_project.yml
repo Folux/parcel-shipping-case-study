@@ -1,0 +1,17 @@
+name: skullport
+version: "1.0.0"
+config-version: 2
+
+# Profile name. When this project runs as a Databricks dbt task with a
+# warehouse_id set, Databricks auto-generates a matching profiles.yml — no
+# credentials are stored in the repo.
+profile: skullport
+
+model-paths: ["models"]
+
+models:
+  skullport:
+    # Materialize everything as Delta tables (full refresh, idempotent).
+    +materialized: table
+    silver:
+      +tags: ["silver"]

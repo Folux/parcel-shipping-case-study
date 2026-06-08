@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Bronze landing zone produced by the synthetic data generator.
+    database: skullport   # Unity Catalog catalog (dbt calls the catalog "database")
+    schema: raw
+    tables:
+      - name: labels
+      - name: tracking_events

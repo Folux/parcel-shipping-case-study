@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: labels
+    description: One conformed row per label (latest CDC state) with quality flags.
+    columns:
+      - name: label_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: tracking_events
+    description: Deduplicated tracking events with canonical event_name and UTC-normalized event_at.
+    columns:
+      - name: event_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: label_id
+        description: Foreign key to labels.
+        data_tests:
+          - relationships:
+              to: ref('labels')
+              field: label_id
+      - name: event_name
+        description: Canonical conformed event name.
+        data_tests:
+          - accepted_values:
+              values: ["picked_up", "in_transit", "out_for_delivery", "delivered", "unknown"]
