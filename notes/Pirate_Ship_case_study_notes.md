@@ -766,3 +766,50 @@ All 7 modules have been implemented and tested:
 
 **Pipeline status**: Bronze ✅ → Silver ✅ → **Gold ⏳ (next)**
 
+---
+
+### ✅ 2026-06-08 - Gold Layer + Timezone/Conformance Debugging - MVP COMPLETE 🏁
+
+**Gold mart (`notebooks/gold_layer.py`, `SPEC_4b_3` / `IMPL_4b_3`)**
+- `skullport.gold.delivery_performance` — operational mart, one row per label
+- MVP metric: `is_delivered_on_time` (the case study's #1 question)
+- CTE dedups latest `delivered` event via `ROW_NUMBER()`, LEFT JOIN to labels (no `DISTINCT` — collapse at source, not after a fan-out)
+- Phase 2 will add more metric columns + separate analytical marts (delay clustering, freshness) at different grains
+
+**Debugging saga: on-time % was 0% — two real root causes found via SQL-driven diagnosis**
+
+1. **Timezone bug in the generator (the mess was *buggy*, not just messy).**
+   - `_format_event_at` for DHL_ECOM appended a random tz abbreviation (`EST`/`EDT`/…) to the **UTC** wall-clock time *without converting it* → `15:30 EDT` actually meant 15:30 UTC, not 19:30 UTC.
+   - Fix: added `US_TIMEZONE_OFFSETS` and `astimezone()` so the local time genuinely matches the abbreviation and round-trips back to UTC. USPS/UPS/FEDEX were already correct.
+   - Verified by a bucket query: **92% exact round-trip vs `event_received_at`**, 7% late arrivals (by design), ~0.7% malformed (tz destroyed by corruption).
+
+2. **Silver timestamp parsing was naive.** `TRY_CAST(event_at AS TIMESTAMP)` did no tz conversion and failed on corrupted formats → most `event_at` were NULL/wrong.
+   - Fix: a `normalized` CTE rewrites every variant (offset / Z / plain / abbr / corrupted no-sep / slashes / date-only) into an explicit-offset ISO string, then `try_to_timestamp` once. `is_malformed_timestamp` now flags genuinely-corrupted source formats.
+
+3. **Canonical `event_name` conformance (the actual metric-killer).** `event_name` was `COALESCE(event_code, event_type)` = raw carrier code (`0320`/`DELIVERED`/`DL`). Gold filtered `event_name = 'delivered'` → matched **nothing** → 0%.
+   - Fix: Silver now maps all carrier code/type variants → canonical names (`picked_up`/`in_transit`/`out_for_delivery`/`delivered`/`unknown`); original `event_code`/`event_type` preserved for traceability.
+
+4. **Late deliveries were invisible.** `late_delivery_proportion` (config, 3%) was **never read** by the generator — every delivery sat at `0.95×SLA`, so only ~0.4% were late (jitter noise).
+   - Fix: roll per-label; late shipments place the `delivered` event at `promised + 6–48h` (anchored to the promised date → reliably late at any SLA). Verified end-to-end: **~3.3% of delivered late**.
+
+**Result (live, 5000 labels):** on-time **86.1% overall**, **96.7% of delivered**, 3.3% late, all carriers in 85.5–86.2%. 0% → healthy. ✅
+
+**Specs synced to implementation**
+- `SPEC_4b_2_Silver_Layer.md`: canonical event_name mapping table + timestamp normalization table + corrected malformed handling + preserved code/type columns
+- `SPEC_4b_3_Gold_Layer.md`: expected-distribution table (driven by `late_delivery_proportion`), "~0%/100% = bug" note, corrected the `DISTINCT` wording to the ROW_NUMBER+LEFT JOIN approach
+
+**Validation gate (`notebooks/validation_checks.py`)**
+- 14 assertion-based checks across Silver + Gold (conformance, dedup, referential integrity, CDC collapse, tz sanity, on-time band, late visible, no impossible states, no per-carrier extremes), raises on failure → usable as a job gate
+- Written as plain Spark SQL to port directly to dbt tests in Phase 2
+- All 14 green on live data
+
+**Tests:** 180 passing (added a DHL round-trip test; updated the tz-format test to assert conversion).
+
+---
+
+## 🏁 MVP COMPLETE
+
+**Delivered:** synthetic generator → Bronze → Silver → Gold, all three layer specs + impl plans, 180 unit tests, a live data-quality validation gate. Pipeline runs out-of-the-box on Databricks Free Edition (auto-creates `skullport` catalog).
+
+**Phase 2 (next): dbt migration** — re-express Silver/Gold as dbt models, convert `validation_checks.py` into dbt tests, package via Databricks Asset Bundle. (Follow-up questions pending before we start.)
+
