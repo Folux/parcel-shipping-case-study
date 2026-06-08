@@ -5,23 +5,24 @@
 # skullport.raw.* tables and writes to skullport.silver_dbt.* (a separate
 # schema, so it does NOT clobber the notebook-built skullport.silver.* tables).
 #
-# One-time setup (nothing workspace-specific is committed):
-#   cp .env.example .env      # then edit .env with your profile + warehouse id
-#   source .env
-# - host        comes from your `databricks auth login` profile (DATABRICKS_CONFIG_PROFILE)
-# - warehouse_id comes from the BUNDLE_VAR_warehouse_id env var
+# Setup: authenticate once — the workspace host is read from this profile, so
+# no workspace URL is committed to the repo:
+#   databricks auth login --host https://<your-workspace>.cloud.databricks.com
 #
-# Deploy + run (single default target, no flags needed):
-#   databricks bundle validate
-#   databricks bundle deploy
+# Deploy + run (pass your warehouse id on deploy; it is baked into the job):
+#   databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
 #   databricks bundle run skullport_dbt_silver
+#
+# warehouse_id = last segment of the warehouse's HTTP path: /sql/1.0/warehouses/<id>
+# (If your auth profile isn't the DEFAULT one, add -p <profile> to the commands.)
 
 bundle:
   name: skullport
 
 variables:
   warehouse_id:
-    description: SQL warehouse ID dbt runs against. Set via BUNDLE_VAR_warehouse_id (see .env.example).
+    description: SQL warehouse ID dbt runs against. Pass with --var on deploy.
+    default: ""
 
 resources:
   jobs:
@@ -49,8 +50,7 @@ resources:
 # A single, default target → `databricks bundle ...` needs no -t flag.
 # `mode: development` deploys to your personal /Users/<you>/ workspace folder,
 # so each person (you, a reviewer) gets an isolated deployment.
-# No `workspace.host` here on purpose — it resolves from your CLI auth profile,
-# so no workspace URL is committed to the repo.
+# No `workspace.host` here on purpose — it resolves from your CLI auth profile.
 targets:
   dev:
     mode: development

@@ -62,34 +62,19 @@ bundle's dbt task builds the connection from that (no local `profiles.yml`).
                                    ^^^^^^^^^^^^^^^^  ← this is your warehouse_id
   ```
 
-  (Ignore Server hostname / JDBC URL / OAuth URL — those are for direct client
-  connections, which this bundle does not use.)
+### 4. Deploy and run
 
-### 4. Configure locally (one-time, nothing committed)
-
-Workspace host and warehouse ID are environment-specific, so they live in a
-gitignored `.env` — not in the repo:
-
-```bash
-cp .env.example .env
-# edit .env:
-#   DATABRICKS_CONFIG_PROFILE = your auth profile (see `databricks auth profiles`)
-#   BUNDLE_VAR_warehouse_id   = the ID from step 3
-source .env
-```
-
-- **Host** comes from your `databricks auth login` profile (step 2).
-- **Warehouse ID** comes from `BUNDLE_VAR_warehouse_id`.
-
-### 5. Deploy and run
-
-From the repo root — `dev` is the default target, so no flags are needed:
+From the repo root. The workspace host comes from your auth profile (step 2),
+and you pass the warehouse ID on deploy (it gets baked into the job):
 
 ```bash
 databricks bundle validate
-databricks bundle deploy
+databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
 databricks bundle run skullport_dbt_silver
 ```
+
+`dev` is the default target, so no `-t` flag is needed. (If your auth profile
+isn't the DEFAULT one, add `-p <profile>` to the commands.)
 
 ### 6. Verify
 
