@@ -164,8 +164,27 @@ parsed_events AS (
     event_id,
     label_id,
     carrier,
-    -- Merge event codes and types
-    COALESCE(event_code, event_type, 'UNKNOWN') AS event_name,
+    -- Preserve the original carrier-specific identifiers for traceability
+    event_code,
+    event_type,
+    -- Conform carrier-specific codes/types into a canonical event_name
+    -- (handles schema drift: USPS uses numeric codes, others use type strings,
+    -- DHL uses short codes). Unmatched / missing -> 'unknown'.
+    CASE COALESCE(event_code, event_type)
+      WHEN '0300' THEN 'picked_up'
+      WHEN 'PICKUP' THEN 'picked_up'
+      WHEN 'PU' THEN 'picked_up'
+      WHEN '0301' THEN 'in_transit'
+      WHEN 'IN_TRANSIT' THEN 'in_transit'
+      WHEN 'IT' THEN 'in_transit'
+      WHEN '0310' THEN 'out_for_delivery'
+      WHEN 'OUT_FOR_DELIVERY' THEN 'out_for_delivery'
+      WHEN 'OFD' THEN 'out_for_delivery'
+      WHEN '0320' THEN 'delivered'
+      WHEN 'DELIVERED' THEN 'delivered'
+      WHEN 'DL' THEN 'delivered'
+      ELSE 'unknown'
+    END AS event_name,
     -- Parse the normalized string into a UTC timestamp
     try_to_timestamp(normalized_iso) AS event_at,
     event_received_at,
