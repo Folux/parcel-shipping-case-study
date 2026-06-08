@@ -5,7 +5,11 @@
 # skullport.raw.* tables and writes to skullport.silver_dbt.* (a separate
 # schema, so it does NOT clobber the notebook-built skullport.silver.* tables).
 #
-# One-time setup: fill in `host` and `warehouse_id` under targets.dev below.
+# One-time setup (nothing workspace-specific is committed):
+#   cp .env.example .env      # then edit .env with your profile + warehouse id
+#   source .env
+# - host        comes from your `databricks auth login` profile (DATABRICKS_CONFIG_PROFILE)
+# - warehouse_id comes from the BUNDLE_VAR_warehouse_id env var
 #
 # Deploy + run (single default target, no flags needed):
 #   databricks bundle validate
@@ -17,7 +21,7 @@ bundle:
 
 variables:
   warehouse_id:
-    description: SQL warehouse ID that dbt executes models against (set per target below).
+    description: SQL warehouse ID dbt runs against. Set via BUNDLE_VAR_warehouse_id (see .env.example).
 
 resources:
   jobs:
@@ -45,12 +49,9 @@ resources:
 # A single, default target → `databricks bundle ...` needs no -t flag.
 # `mode: development` deploys to your personal /Users/<you>/ workspace folder,
 # so each person (you, a reviewer) gets an isolated deployment.
+# No `workspace.host` here on purpose — it resolves from your CLI auth profile,
+# so no workspace URL is committed to the repo.
 targets:
   dev:
     mode: development
     default: true
-    workspace:
-      host: https://YOUR-WORKSPACE.cloud.databricks.com
-    variables:
-      # The last segment of the warehouse's HTTP path: /sql/1.0/warehouses/<id>
-      warehouse_id: PUT-YOUR-WAREHOUSE-ID-HERE

@@ -65,18 +65,21 @@ bundle's dbt task builds the connection from that (no local `profiles.yml`).
   (Ignore Server hostname / JDBC URL / OAuth URL — those are for direct client
   connections, which this bundle does not use.)
 
-### 4. Fill in the bundle (one-time)
+### 4. Configure locally (one-time, nothing committed)
 
-Edit `databricks.yml` → `targets.dev` and set two values:
+Workspace host and warehouse ID are environment-specific, so they live in a
+gitignored `.env` — not in the repo:
 
-```yaml
-targets:
-  dev:
-    workspace:
-      host: https://dbc-xxxx.cloud.databricks.com   # your workspace URL
-    variables:
-      warehouse_id: 0123456789abcdef                # the ID from step 3
+```bash
+cp .env.example .env
+# edit .env:
+#   DATABRICKS_CONFIG_PROFILE = your auth profile (see `databricks auth profiles`)
+#   BUNDLE_VAR_warehouse_id   = the ID from step 3
+source .env
 ```
+
+- **Host** comes from your `databricks auth login` profile (step 2).
+- **Warehouse ID** comes from `BUNDLE_VAR_warehouse_id`.
 
 ### 5. Deploy and run
 
