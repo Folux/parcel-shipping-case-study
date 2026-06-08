@@ -1,4 +1,4 @@
-# Silver Layer Specification (4a.2)
+# Silver Layer Specification (4b.2)
 
 ## Overview
 

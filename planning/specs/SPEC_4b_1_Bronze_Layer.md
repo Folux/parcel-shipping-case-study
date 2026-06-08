@@ -1,4 +1,4 @@
-# Bronze Layer Specification (4a.1)
+# Bronze Layer Specification (4b.1)
 
 ## Overview
 

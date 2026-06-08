@@ -1,4 +1,4 @@
-# Gold Layer Specification (4a.3)
+# Gold Layer Specification (4b.3)
 
 ## Overview
 
