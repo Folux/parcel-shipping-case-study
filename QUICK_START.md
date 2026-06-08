@@ -73,10 +73,7 @@ databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
 databricks bundle run skullport_dbt_silver
 ```
 
-`dev` is the default target, so no `-t` flag is needed. (If your auth profile
-isn't the DEFAULT one, add `-p <profile>` to the commands.)
-
-### 6. Verify
+### 5. Verify
 
 ```sql
 SELECT COUNT(*) FROM skullport.silver_dbt.labels;             -- ~5,000
@@ -86,6 +83,13 @@ GROUP BY event_name;                                          -- canonical names
 ```
 
 See `dbt/README.md` for project layout and details.
+
+### Troubleshooting
+
+- **`Workspace doesn't support Client-N channel for REPL`** — the dbt task's
+  serverless environment version isn't available in your workspace. Bump
+  `resources.jobs.skullport_dbt_silver.environments[0].spec.client` in
+  `databricks.yml` (e.g. `"2"` → `"3"`), redeploy, and run again.
 
 ---
 

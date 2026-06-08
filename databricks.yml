@@ -43,7 +43,9 @@ resources:
       environments:
         - environment_key: dbt_env
           spec:
-            client: "1"
+            # Serverless environment version. Free Edition rejects "1"
+            # ("doesn't support Client-1 channel"); use a newer version.
+            client: "2"
             dependencies:
               - "dbt-databricks>=1.8,<2.0"
 
