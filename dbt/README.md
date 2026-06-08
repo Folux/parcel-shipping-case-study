@@ -18,9 +18,8 @@ Models and tests run together via `dbt build`.
 
 ## How it runs (no local cluster needed)
 
-dbt does **not** run locally. It runs as a **dbt task in a Databricks Job**
-(serverless), executing models against a SQL warehouse. The connection profile
-is generated from the warehouse — no credentials in this repo.
+It runs as a **dbt task in a Databricks Job**, executing models against a SQL warehouse. The connection profile
+is generated from the warehouse.
 
 From the repo root (see the top-level `QUICK_START.md` for full setup):
 
@@ -46,9 +45,3 @@ dbt/
         ├── _gold__models.yml      # tests
         └── delivery_performance.sql
 ```
-
-## Schema routing
-
-The bundle's dbt task sets the target schema to `silver`. The `gold` folder
-overrides `+schema: gold` in `dbt_project.yml`, and the
-`generate_schema_name` macro makes that an absolute name (not `silver_gold`).

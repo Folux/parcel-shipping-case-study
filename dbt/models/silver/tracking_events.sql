@@ -1,6 +1,5 @@
 -- Silver tracking_events: dedup, conform carrier-specific codes into a canonical
 -- event_name, and normalize every timestamp variant to UTC.
--- Ported from notebooks/silver_layer.py (Step 2).
 
 with deduped as (
     select

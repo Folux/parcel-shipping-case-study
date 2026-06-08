@@ -10,8 +10,6 @@ models:
   skullport:
     # Materialize as Delta tables (full refresh; incremental is a future improvement)
     +materialized: table
-    # The generate_schema_name macro makes these schemas literal (not target-prefixed),
-    # so each layer simply states its own schema.
     silver:
       +schema: silver
     gold:

@@ -1,5 +1,5 @@
 -- Silver labels: collapse CDC rows to the latest state per label_id and add
--- data-quality / fraud flags. Ported from notebooks/silver_layer.py (Step 1).
+-- data-quality / fraud flags.
 
 with latest_per_label as (
     select

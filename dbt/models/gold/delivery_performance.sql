@@ -1,5 +1,4 @@
 -- Gold operational mart: one row per label with the on-time delivery metric.
--- Ported from notebooks/gold_layer.py.
 
 with latest_delivery_per_label as (
     -- Latest 'delivered' event per label (defensive dedup via window function)
