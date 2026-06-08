@@ -15,7 +15,6 @@ Workflow:
 
 # COMMAND ----------
 
-from pyspark.sql import SparkSession
 import logging
 
 logging.basicConfig(
@@ -24,7 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-spark = SparkSession.getOrCreate()
+# Note: `spark` is pre-initialized by Databricks — no need to import or create it.
 
 # COMMAND ----------
 
