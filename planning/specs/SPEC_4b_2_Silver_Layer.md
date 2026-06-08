@@ -53,29 +53,56 @@
 
 ### `silver.tracking_events` (14 columns)
 
-**Source**: Deduplicate and parse `raw.tracking_events`, merge event codes/types
+**Source**: Deduplicate and parse `raw.tracking_events`, conform event codes/types, normalize timestamps
 
 | Column | Type | Nullable | Notes |
 |--------|------|----------|-------|
 | `event_id` | String | NO | Unique event ID |
 | `label_id` | String | NO | Foreign key to silver.labels |
 | `carrier` | String | NO | Carrier name |
-| `event_name` | String | NO | Merged: event_code OR event_type (picked_up, in_transit, out_for_delivery, delivered) |
-| `event_at` | Timestamp | NO | Event timestamp (parsed to valid UTC) |
+| `event_code` | String | YES | Original carrier event code (USPS/DHL); NULL for type-based carriers — preserved for traceability |
+| `event_type` | String | YES | Original carrier event type (UPS/FEDEX); NULL for code-based carriers — preserved for traceability |
+| `event_name` | String | NO | **Canonical** event conformed from code/type: `picked_up`, `in_transit`, `out_for_delivery`, `delivered`, `unknown` |
+| `event_at` | Timestamp | YES | Event time normalized to UTC (NULL only if truly unparseable) |
 | `event_received_at` | Timestamp | NO | System received timestamp |
 | `location_zip` | String | YES | Scan location ZIP code |
 | `raw_payload` | String | YES | Original carrier payload |
-| `is_malformed_timestamp` | Boolean | NO | event_at couldn't be parsed to valid UTC (~1%) |
-| `is_missing_event_type` | Boolean | NO | Both event_code and event_type NULL (~1%) |
+| `is_malformed_timestamp` | Boolean | NO | Source `event_at` was a corrupted format (separators/time/zone destroyed) or unparseable (~1%) |
+| `is_missing_event_type` | Boolean | NO | Both event_code and event_type NULL → `event_name='unknown'` (~1%) |
 | `is_event_on_voided_label` | Boolean | NO | Event on a voided label (~5% of voided labels) |
 | `inserted_at` | Timestamp | NO | When Silver ETL ran and inserted this row (UTC) |
 
 **Transformation Logic**:
 - **Deduplicate**: Remove duplicate event_ids, keep last one (by event_received_at)
-- Merge `event_code` and `event_type` into single `event_name` column
-- Parse `event_at` (STRING) to TIMESTAMP in valid UTC (handle all carrier formats + malformed)
-- Flag malformed patterns from Bronze (malformed_timestamp, missing_event_type)
+- **Conform `event_name`**: Map carrier-specific code/type into a canonical event name (see mapping below) — handles schema drift across carriers
+- **Normalize `event_at` to UTC**: Rewrite every carrier/corrupted timestamp variant into an explicit-offset ISO-8601 string, then parse once (see normalization below)
+- **Preserve** original `event_code` / `event_type` for traceability
+- Flag malformed patterns (malformed_timestamp, missing_event_type)
 - Join to silver.labels to check if label is voided
+
+**Canonical `event_name` mapping** (schema-drift conformance):
+
+| Canonical | USPS (code) | UPS (type) | FEDEX (type) | DHL (code) |
+|-----------|-------------|------------|--------------|------------|
+| `picked_up` | 0300 | PICKUP | PICKUP | PU |
+| `in_transit` | 0301 | IN_TRANSIT | IN_TRANSIT | IT |
+| `out_for_delivery` | 0310 | OUT_FOR_DELIVERY | OUT_FOR_DELIVERY | OFD |
+| `delivered` | 0320 | DELIVERED | DELIVERED | DL |
+| `unknown` | _(missing / unmapped)_ | | | |
+
+**Timestamp normalization** (`event_at` → UTC). The generator emits carrier-specific and deliberately-corrupted formats; Silver canonicalizes them to one explicit-offset ISO string, then parses with `try_to_timestamp`:
+
+| Source format | Example | Handling |
+|---------------|---------|----------|
+| Offset (USPS) | `2026-06-06T05:30:00-05:00` | kept as-is (offset is explicit) |
+| Z / UTC (UPS) | `2026-06-06T10:30:00Z` | kept as-is |
+| Plain, no tz (FEDEX) | `2026-06-06T10:30:00` | assume UTC (append `Z`) |
+| Abbreviation (DHL) | `2026-06-06T05:30:00 EST` | swap abbr → numeric offset (`-05:00`, …) |
+| Corrupted: no separators | `20260606T103000` | rebuild ISO, assume UTC (tz destroyed → flag malformed) |
+| Corrupted: wrong separators | `2026/06/06T10:30:00` | slashes→dashes, assume UTC (flag malformed) |
+| Corrupted: date only | `2026-06-06` | midnight UTC (flag malformed) |
+
+> The abbreviation→offset mapping mirrors the generator (EST −5, EDT −4, CST −6, CDT −5, MST −7, MDT −6, PST −8, PDT −7), so DHL events round-trip back to the correct UTC instant.
 
 **Data Organization**:
 - Events stored in received order (not necessarily chronological by event_at)
@@ -91,12 +118,13 @@
 **Specific Rules**:
 
 - **Malformed timestamps** (`is_malformed_timestamp`):
-  - If `event_at` unparseable → use `event_received_at` as fallback
-  - Keep row, set flag = true
+  - Corrupted source formats are repaired best-effort and parsed as UTC (the timezone was destroyed by corruption, so the instant may be off by hours)
+  - Truly unparseable strings → `event_at` = NULL
+  - Either way: keep row, set flag = true (downstream can exclude flagged events from time-sensitive metrics)
 
 - **Missing event type** (`is_missing_event_type`):
   - Both event_code AND event_type NULL → keep row, set flag = true
-  - `event_name` = NULL or "UNKNOWN"
+  - `event_name` = `'unknown'`
 
 - **Fraud flags** (weight, void, insurance, missing_zip):
   - Keep all rows, set flag = true
