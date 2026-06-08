@@ -23,7 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Note: `spark` is pre-initialized by Databricks — no need to import or create it.
 
 # COMMAND ----------
 
