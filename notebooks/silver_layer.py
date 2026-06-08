@@ -27,14 +27,25 @@ logger = logging.getLogger(__name__)
 
 # COMMAND ----------
 
-# Step 1: Create workspace.silver.labels (collapse CDC + fraud flags)
+# Step 0: Ensure silver schema exists
 
 logger.info("=" * 70)
+logger.info("STEP 0: ENSURE SCHEMA EXISTS")
+logger.info("=" * 70)
+
+spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.silver")
+logger.info("✓ Schema workspace.silver ready")
+
+# COMMAND ----------
+
+# Step 1: Create workspace.silver.labels (collapse CDC + fraud flags)
+
+logger.info("\n" + "=" * 70)
 logger.info("STEP 1: CREATE SILVER.LABELS")
 logger.info("=" * 70)
 
 spark.sql("""
-CREATE OR REPLACE TABLE workspace.workspace.silver.labels AS
+CREATE OR REPLACE TABLE workspace.silver.labels AS
 WITH latest_per_label AS (
   SELECT
     *,
@@ -82,7 +93,7 @@ logger.info("STEP 2: CREATE SILVER.TRACKING_EVENTS")
 logger.info("=" * 70)
 
 spark.sql("""
-CREATE OR REPLACE TABLE workspace.workspace.silver.tracking_events AS
+CREATE OR REPLACE TABLE workspace.silver.tracking_events AS
 WITH deduped AS (
   SELECT
     *,
