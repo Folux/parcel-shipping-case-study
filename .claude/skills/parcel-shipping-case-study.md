@@ -1,8 +1,3 @@
----
-name: parcel-shipping-case-study
-description: Guide for completing a job interview case study for a parcel shipping platform within a 6-8 hour constraint. The platform offers cheap domestic (US) shipping with global shipping as an edge case. Use this skill whenever working on this case study. Critical: Follow the strict step-by-step methodology (one step at a time), prioritize MVP delivery with functional coverage over polish, and always include "next steps" for production readiness. Never code straight away—spec first, plan second, implement third.
----
-
 # Parcel Shipping Platform Case Study
 
 ## Overview

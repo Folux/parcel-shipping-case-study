@@ -1,87 +1,137 @@
-# Skullport — Parcel Shipping Data Pipeline
+# Skullport Parcel Generator
 
-A synthetic **parcel-shipping data pipeline** for the Delivery Performance Mart
-case study, built on Databricks (Free Edition compatible). It generates messy,
-realistic carrier data and refines it through a medallion architecture into an
-analytics-ready mart that answers: **what % of shipments are delivered on time, and where do delays cluster?**
+This app is a simulator for parcel shipping traffic among the United States.
+It has 2 components
+* A **parcel generator** for generating random shipping labels and tracking events with realistic data flaws.
+* A **etl project** for cleaning the generated flaws in the data and building a data mart on top of it.
 
+The app runs on Databricks as platform for running and storing and uses dbt for transforming the data
+
+## 1. Install & Run
+
+### Generate and ingest the data (bronze layer)
+
+1. Log into your Databricks workspace
+2. From the left pane select *New* → *Git folder* → repo URL https://github.com/Folux/parcel-shipping-case-study.git → *Clone*
+3. In the cloned repo open *parcel-shipping-case-study/notebooks/ingestion_and_bronze_layer.py* → select your running instance → click *Run all*
+
+Creates 2 tables *skullport.raw.labels* (~5,000) and *skullport.raw.tracking_events* (~19,000) in the  
+
+### Transform the data into a data mart (silver and gold layer)
+
+1. In yor local machine, clone the Github repo https://github.com/Folux/parcel-shipping-case-study.git
+2. Get the Databricks CLI to run *databricks* commands
 ```
- PySpark generator        dbt (Asset Bundle)              Databricks SQL
-┌──────────────────┐   ┌────────────────────────────┐   ┌────────────────┐
-│  Bronze (raw)    │──▶│  Silver         Gold        │──▶│  validation    │
-│  raw.labels      │   │  silver.labels  gold.       │   │  checks        │
-│  raw.tracking_…  │   │  silver.track…  delivery_…  │   │  (assertions)  │
-└──────────────────┘   └────────────────────────────┘   └────────────────┘
+brew install databricks/tap/databricks
 ```
-
-All tables live in the Unity Catalog catalog **`skullport`** (auto-created).
-
-## Architecture & tool choices
-
-The case study asks for a real combination of **PySpark, Databricks SQL, and dbt** — each used where it earns its place:
-
-| Layer | Tool | Why |
-|-------|------|-----|
-| **Bronze** — generate synthetic `raw.labels` & `raw.tracking_events` | **PySpark** (`src/skullport_generator/`) | Procedural data generation with carrier-specific formats, CDC history, and injected data-quality issues is naturally imperative Python; writes Delta via Spark. |
-| **Silver + Gold** — clean / conform / model | **dbt** (`dbt/`) | Declarative, testable, version-controlled SQL with a dependency DAG (`ref`), generic tests, and bundle-based deployment. The production transformation layer. |
-| **Validation** — data-quality gate | **Databricks SQL** (`notebooks/validation_checks.py`) | Ad-hoc, range-based assertions (on-time band, no impossible states, referential integrity) run interactively as a gate, beyond what generic dbt tests express. |
-
-**Medallion layers**
-
-- **Bronze** (`skullport.raw.*`) — raw landing zone, intentionally messy: CDC update rows, duplicates, late arrivals, four carrier timestamp formats (offset / Z / plain / tz-abbreviation), schema drift (per-carrier `event_code` vs `event_type`), malformed timestamps, missing fields, voided-label scans.
-- **Silver** (`skullport.silver.*`) — cleaned & conformed: CDC collapse to latest state, dedup, **canonical `event_name`** (carrier codes → `picked_up`/…/`delivered`), **UTC-normalized `event_at`**, and explicit data-quality flags (keep all rows, flag rather than drop).
-- **Gold** (`skullport.gold.delivery_performance`) — one row per label with the **`is_delivered_on_time`** metric and supporting facts/dimensions.
-
-## Running it
-
-See **[QUICK_START.md](QUICK_START.md)** for the full walkthrough. In short:
-
-1. **Bronze** — run `notebooks/ingestion_and_bronze_layer.py` in Databricks.
-2. **Silver + Gold** — deploy & run dbt via the Asset Bundle:
-   ```bash
-   databricks bundle deploy --var="warehouse_id=<id>"
-   databricks bundle run skullport_dbt_build
+3. From Databricks chose or provision a SQL Warehose and get it's id
+   1. Select yor SQL Warehouse
+   2. Go to Connection details
+   3. The warehouse ID is the last segment of the HTTP path
    ```
-3. **Validation** — run `notebooks/validation_checks.py`.
-
-## Repository layout
-
+   HTTP path:  /sql/1.0/warehouses/0123456789abcde01
+                                    ^^^^^^^^^^^^^^^^  ← this is your warehouse_id
+   ```
+4. In your terminal, replace *<your-warehouse-id>* in bellow command with your SQL Warehouse id and run it
+```bash
+databricks bundle deploy --var="warehouse_id=<your-warehouse-id>"
+databricks bundle run skullport_dbt_build
 ```
-src/skullport_generator/   # PySpark synthetic data generator (Bronze)
-notebooks/                 # ingestion_and_bronze_layer.py, validation_checks.py
-dbt/                       # Silver + Gold models, tests, macros
-databricks.yml             # Asset Bundle: deploys the dbt job
-config.yaml                # Generator volumes, mess proportions, target catalog
-tests/                     # pytest unit tests for the generator
-planning/                  # specs & implementation plans per layer
-notes/                     # running project log
-instructions/              # the original case study brief
-```
+It will create the tables for the silver and gold layer in your Datalake.
 
-## Local development
+### Testing
 
+#### Parcel generator
+1. Install `Poetry`
+2. Run the tests
 ```bash
 poetry install
-poetry run pytest tests/        # 180 unit tests for the generator
+poetry run pytest tests/
 ```
 
-The generator is configuration-driven (`config.yaml`): data volume, every
-mess/edge-case proportion, carrier distribution, and the target
-`catalog_name` / `schema_name` — nothing hard-coded. Reproducible via
-`random_seed`. It can run locally for tests, but its production target is the
-Databricks notebook wrapper.
+#### Data tests
 
-## Testing
+With running the dbt models on Databricks they already ran the dbt tests.
 
-- **Generator** — `pytest tests/` (unit tests, deterministic via seed).
-- **dbt** — generic tests (`unique`, `not_null`, `relationships`,
-  `accepted_values`) run as part of `dbt build`.
-- **Pipeline** — `notebooks/validation_checks.py` asserts cross-layer
-  data-quality invariants on the built tables.
+There is a notebook to run additional tests on the tables
+In the cloned repo open *parcel-shipping-case-study/notebooks/validation_checks.py* → select your running instance → click *Run all*
 
-## Notes & future work
+## 2. Data Volumes & Mess Proportions
 
-Post-MVP improvements are tracked in [`planning/NICE_TO_HAVE.md`](planning/NICE_TO_HAVE.md)
-(incremental/merge loads, an orphaned-events table, richer timezone realism,
-dbt test expansion, …). The running build log is in
-[`notes/`](notes/Pirate_Ship_case_study_notes.md).
+Generated dataset (config.yaml, all configurable):
+- **5,000 labels** (shippable packages)
+- **~19,000 tracking events** (average ~3.8 events per label)
+- **4 carriers**: USPS (30%), UPS (25%), FEDEX (25%), DHL_ECOM (20%)
+
+Injected data-quality "weirdness" (all configurable):
+
+| Issue | Config | Realized | Why |
+|-------|--------|----------|-----|
+| Late deliveries | 3% | 3.3% | Anchored to promised date + 6–48h jitter; reliable independent of SLA length |
+| Duplicate events | 5% | 4.8% | Real-world carrier resends; tested dedup logic |
+| Out-of-order scans | 8% | 7.9% | Late-arriving carrier transmissions; tests ordering robustness |
+| Missing event type | 1% | 0.9% | Schema drift: some carriers only emit code OR type, never both |
+| Malformed timestamps | 0.8% | 0.7% | Real corruptions: no separators, wrong delimiters, date-only, tz destroyed |
+| Voided labels | 11% | 11.2% | Labels cancelled after issue; late scans still arrive |
+
+---
+
+## 3. Production Roadmap: Beyond the Prototype
+
+### Ingestion (Real Source Systems)
+**Prototype**: `skullport_generator` (random sample data).  
+**Production**: Kafka or AWS SQS
+
+### Transformation & Modeling
+**Prototype**: dbt (serverless SQL warehouse)
+- Table materialization - all data is processed at once
+**Production**: dbt (providioned SQL warehouse)
+- Incremental materialization
+
+### Orchestration & Monitoring
+**Prototype**: Manual notebook + bundle CLI.  
+**Production**:
+- Airflow
+- Alerts
+- Grafana for logging
+
+### Infrastructure & IaC
+**Prototype**: Manual Databricks setup  
+**Production**:
+- Terraform
+- GitHub Actions for CI/CD
+- Secrets in AWS Secrets Manager
+
+## 4. Three Conscious Trade-offs
+
+1. **Full refresh vs. incremental transforms**  
+   I made it simple respecting the tight time.  
+   Different order of arrival of scans and delayed transmission of the data is no longer a problem, because the data in it's total is always consistent.
+   With incremental loads you would have to pick a different materialization strategy in dbt for merging late arriving events into existing objects.
+
+2. **Raw layer and bronze layer is the same**  
+   Because the raw layer, created by the generator, is identical to the bronze layer, I decided to merge them.
+   It they were separate then you could use incremental loads for the bronze layer. Without incremental loads, the app would probably not manage huge production loads. And this way we lost the special handling of late arriving events, what was no longer needed.
+
+3. **Only delivering 1 metric in the gold layer**  
+   Being mindful with the time, I started only delivering one metric on the gold layer. This proves that everything works end to end.
+   Adding more metrics to dbt models is easy and fast, I did not get to it, because the above 2 tradeoffs were more important than this one.
+---
+
+## 5. One Thing to Change First (Next Full Day)
+
+For sure I would add incremental materialisation to the dbt models and separate the raw layer from the bronze layer to show the dynamics when loading incrementally and dealing with late arriving events. 
+
+---
+
+## 6. AI Usage (Claude)
+
+Claude handled routine coding and brainstorming; I owned decisions, testing, and validation. No code shipped without my sign-off.
+
+**Strategy**: Specs first (manual review & approval) → Implementation Plan (manual review & approval) → Code (manual review & approval).
+
+- **Specifications** (SPEC_*.md): I wrote sketches; Claude filled in data contracts, edge cases, and flagging philosophy. I approved each before implementation.
+- **Implementation Plans** (IMPL_*.md): Claude produced step-by-step breakdowns; I reviewed for feasibility and edited the dbt/notebook approach.
+- **Code generation**: Claude wrote the generator, notebooks, and dbt models from the approved plans. I tested each layer end-to-end, validated metrics, and debugged (timezone bugs, late-delivery wiring, etc.).
+- **Architecture & decisions**: dbt-over-notebooks, monorepo-over-split, serverless-over-classic-cluster — all reasoned jointly and approved before building.
+- **Testing & debugging**: I ran the full suite, and walked Claude through the diagnosis (timezone bug, canonical event_name, unwired late_delivery_proportion). Claude suggested fixes; I validated end-to-end.
